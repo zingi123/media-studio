@@ -21,7 +21,7 @@ MAX_SPEEDUP = 1.5      # same limit build_voice_track uses at export
 def voice_sig(c):
     """Fingerprint of every field the generated voice depends on (timing is NOT part of it: moving a line keeps its voice)."""
     parts = [c.translation.strip(), c.voice_type, getattr(c, "voice_name", ""), f"{getattr(c, 'speed', 1.0):.3f}", c.emotion,
-             getattr(c, "emotion_raw", ""), c.speaker, c.gender, "1" if c.use_voice else "0"]
+             getattr(c, "emotion_raw", ""), getattr(c, "prosody", ""), c.speaker, c.gender, "1" if c.use_voice else "0"]
     return hashlib.sha1("\x1f".join(parts).encode("utf-8")).hexdigest()[:16]
 
 

@@ -36,8 +36,15 @@ class DB:
             return [dict(r) for r in self.conn.execute(
                 "SELECT * FROM history ORDER BY id DESC LIMIT ?", (limit,))]
 
+    def history_count(self):
+        with self.lock:
+            return int(self.conn.execute("SELECT COUNT(*) FROM history").fetchone()[0])
+
     def clear_history(self):
+        """Delete the download-history list.  Returns how many rows were removed."""
+        n = self.history_count()
         self._exec("DELETE FROM history")
+        return n
 
     def completed_path(self, url):
         """Return an existing file path if this URL was already downloaded."""

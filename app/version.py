@@ -1,5 +1,5 @@
 """App version + where updates come from. Bump __version__ before every release."""
-__version__ = "1.0.0"
+__version__ = "1.0.2"
 
 # GitHub repository that holds the Releases, as "owner/repo" (PUBLIC repo used only for Releases, e.g. MediaStudio-releases). CHANGE THIS.
 GITHUB_REPO = "zingi123/MediaStudio-releases"

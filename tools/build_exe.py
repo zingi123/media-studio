@@ -10,6 +10,14 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
 import gen_deps  # noqa: E402
 
+# Packages NOT bundled. PaddleOCR is optional (default OCR = RapidOCR) and paddle's libpaddle.pyd crashes
+# PyInstaller's analysis on CPUs without the needed instructions (0xc000001d). The rest only slow the build.
+EXCLUDE = ["paddle", "paddleocr", "paddlex", "tensorflow", "tensorboard", "easyocr", "tkinter", "pytest"]
+
+
+def excluded(mod):
+    return any(mod == e or mod.startswith(e + ".") for e in EXCLUDE)
+
 
 def installed(mod):
     try:
@@ -19,13 +27,16 @@ def installed(mod):
 
 
 def main():
-    mods = [m for m in sorted(set(gen_deps.third_party()) | gen_deps.EXTRA) if installed(m)]
+    mods = [m for m in sorted(set(gen_deps.third_party()) | gen_deps.EXTRA) if installed(m) and not excluded(m)]
     missing = [m for m in gen_deps.third_party() if not installed(m)]
     if missing:
         print("NOTE: imported by the code but not installed in this venv (skipped):", ", ".join(missing))
+    print("NOTE: excluded from the build:", ", ".join(EXCLUDE))
     cmd = [sys.executable, "-m", "PyInstaller", str(ROOT / "main.py"), "--name", "MediaStudio", "--noconfirm", "--clean",
            "--windowed", "--exclude-module", "app", "--paths", str(ROOT),
            "--distpath", str(ROOT / "dist"), "--workpath", str(ROOT / "build"), "--specpath", str(ROOT / "build")]
+    for e in EXCLUDE:
+        cmd += ["--exclude-module", e]
     ico = ROOT / "assets" / "logo.ico"
     if ico.exists():
         cmd += ["--icon", str(ico)]

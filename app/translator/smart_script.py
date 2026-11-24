@@ -67,7 +67,7 @@ def _stage(progress, lo, hi):
 
 def scan_smart_script(video, lang="auto", model="small", device="cpu", hf_token="", min_conf=45, saved_presets=None,
                       use_emotion=True, break_on_silence=SB.DEFAULT_SILENCE_S, max_line_secs=0.0, emo_min_pct=70, event_min_pct=50, use_motion=True,
-                      use_story=True, split_on_emotion=True, ocr_fix=False, diar_mode="pyannote", diar_model=None, gemini_key="", gemini_model="gemini-3.8-flash", progress=None, cancel=None):
+                      use_story=True, split_on_emotion=True, ocr_fix=False, diar_mode="pyannote", diar_model=None, gemini_key="", gemini_model="gemini-3.8-flash", progress=None, cancel=None, asr_hint=""):
     """-> (cues, note). Raises RuntimeError when no speech is found."""
     say = (lambda m: progress(m)) if progress else (lambda m: None)
     notes = []
@@ -138,7 +138,9 @@ def scan_smart_script(video, lang="auto", model="small", device="cpu", hf_token=
         pth.start()                                                  # ចាប់ផ្តើម
 
     say("Smart Script 1/4: reading the words and their exact times (Whisper)... (voice detect runs at the same time)")
-    wparams = {"model": model, "lang": lang}
+    from .speech_recognition import asr_source, hint_text
+    hint = hint_text(asr_hint)
+    wparams = {"model": model, "lang": lang, "hint": hint, "src": asr_source(video)}   # a different hint / vocals stem -> Whisper runs again
     wfile = wdir / "whisper_words.json"
     if state.is_done("whisper", wparams) and state.meta.get("whisper_det") is not None:
         words, det = _load_words(wfile), state.meta["whisper_det"] or None
@@ -147,8 +149,12 @@ def scan_smart_script(video, lang="auto", model="small", device="cpu", hf_token=
             progress(65)
     else:
         state.start("whisper", wparams)
+        if wparams["src"] == "vocals":
+            say("Whisper listens to the Demucs vocals (music removed).")
+        if hint:
+            say(f"Whisper hint (names / terms): {hint}")
         words, det = transcribe_words(video, model=model, language=None if lang == "auto" else lang, device=device,
-                                      progress=_stage(progress, 0, 65), cancel=cancel)
+                                      progress=_stage(progress, 0, 65), cancel=cancel, initial_prompt=hint)
         if words:
             _save_words(wfile, words)
             state.meta["whisper_det"] = det or ""

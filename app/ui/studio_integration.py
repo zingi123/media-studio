@@ -615,6 +615,69 @@ class StudioMixin(PlaybackMixin):
             if self.vplayer and self._playing():
                 self.vplayer.pause()
 
+    # ------------------------------------------------------------------ Clear Cache
+    def clear_cache_clicked(self):
+        """Header button 'Clear Cache': deletes the work cache, the saved project history and the download history."""
+        from ..shared import cache as C
+        if self.worker and self.worker.isRunning():
+            QMessageBox.information(self, "Clear Cache", "A step is still running. Press Stop first, then clear the cache.")
+            return
+        rep = C.report(self.ctx.db)
+        lines = [f"•  {label}:  {C.human(b)}" for label, b in rep["items"]]
+        lines.append(f"•  Download history list:  {rep['history_rows']} item(s)")
+        box = QMessageBox(self)
+        box.setIcon(QMessageBox.Warning); box.setWindowTitle("Clear Cache")
+        box.setText(f"Delete the cache and all saved history?  ({C.human(rep['bytes'])})")
+        box.setInformativeText("\n".join(lines) + "\n\nThe open video is kept, but Demucs stems, Khmer voice files, the saved script "
+                               "and mixer / timeline settings are removed and must be made again.\n\n"
+                               "NOT deleted: settings, API keys, cloned voices, AI models, downloaded and exported files.")
+        box.setStandardButtons(QMessageBox.Yes | QMessageBox.Cancel); box.setDefaultButton(QMessageBox.Cancel)
+        if box.exec() != QMessageBox.Yes:
+            return
+        try:                                     # release every file that is still open (mapped channel wavs, preview proxy)
+            self._pb_shutdown()
+        except Exception:  # noqa
+            pass
+        try:
+            if self.vplayer:
+                self.vplayer.stop(); self.vplayer.setSource(QUrl())
+        except Exception:  # noqa
+            pass
+        if self._save_timer is not None:
+            self._save_timer.stop()              # a pending autosave must not write the old project back
+        self.tog["Process"].setChecked(True)
+        self.log.appendPlainText("Clearing cache and history...")
+        self._run(C.clear, self.ctx.db, done=self._clear_cache_done, alert=True,
+                  on_fail=lambda m: self._clear_cache_reset())
+
+    def _clear_cache_reset(self):
+        """Forget the in-memory project too, otherwise it would be saved again (autosave / close) and the history would come back."""
+        self.cues = []
+        self.clips = []
+        self.mixer = M.Mixer()
+        self._pb_set_mixer(self.mixer)
+        try:
+            self.tl.peaks.cache.clear()
+        except Exception:  # noqa
+            pass
+        if self.video:
+            self.load_video(self.video)          # re-opens the video as a blank project (and re-creates the preview)
+        else:
+            self.refresh()
+            self._st_refresh_mixer_state()
+
+    def _clear_cache_done(self, res):
+        from ..shared import cache as C
+        self._clear_cache_reset()
+        msg = f"Cache cleared: {C.human(res['bytes'])} freed ({res['files']} file(s)), {res['history_rows']} history item(s) removed."
+        self.log.appendPlainText("✓ " + msg)
+        if res["skipped"]:
+            self.log.appendPlainText(f"{len(res['skipped'])} file(s) could not be deleted (in use by another program):")
+            for x in res["skipped"][:10]:
+                self.log.appendPlainText("   " + x)
+            msg += f"\n\n{len(res['skipped'])} file(s) are in use by another program and were kept. Close it and press Clear Cache again."
+        QMessageBox.information(self, "Clear Cache", msg)
+
     # ------------------------------------------------------------------ project persistence
     def _st_paths(self):
         d = work_dir(Path(self.video).stem)

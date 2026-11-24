@@ -1,0 +1,1243 @@
+2825 INFO: PyInstaller: 6.22.3, contrib hooks: 2026.10
+2825 INFO: Python: 3.11.9
+3456 INFO: Platform: Windows-10-10.0.19045-SP0
+3456 INFO: Python environment: C:\Users\zing zing\Desktop\MediaStudio\.venv311
+3464 INFO: wrote C:\Users\zing zing\Desktop\MediaStudio\build\MediaStudio.spec
+3517 INFO: Removing temporary files and cleaning cache in C:\Users\zing zing\AppData\Local\pyinstaller
+5273 WARNING: Failed to collect submodules for 'PySide6.scripts.deploy_lib' because importing 'PySide6.scripts.deploy_lib' raised: ModuleNotFoundError: No module named 'project_lib'
+7952 WARNING: Failed to collect submodules for 'cv2.gapi' because importing 'cv2.gapi' raised: AttributeError: module 'cv2' has no attribute 'gapi_wip_gst_GStreamerPipeline'
+178241 WARNING: Failed to collect submodules for 'pyannote.audio.sample' because importing 'pyannote.audio.sample' raised: RuntimeError: Could not load libtorchcodec. Likely causes:
+          1. FFmpeg is not properly installed in your environment. We support
+             versions 4, 5, 6, 7, 8, and 9, and we attempt to load libtorchcodec
+             for each of those versions. Errors for versions not installed on
+             your system are expected; only the error for your installed FFmpeg
+             version is relevant. On Windows, ensure you've installed the
+             "full-shared" version which ships DLLs.
+          2. The PyTorch version (2.15.0+cpu) is not compatible with
+             this version of TorchCodec. Refer to the version compatibility
+             table:
+             https://github.com/pytorch/torchcodec?tab=readme-ov-file#installing-torchcodec.
+          3. Another runtime dependency; see exceptions below.
+
+        The following exceptions were raised as we tried to load libtorchcodec:
+        
+[start of libtorchcodec loading traceback]
+FFmpeg version 9:
+Traceback (most recent call last):
+  File "C:\Users\zing zing\Desktop\MediaStudio\.venv311\Lib\site-packages\torch\_ops.py", line 1587, in load_library
+    ctypes.CDLL(path)
+  File "C:\Users\zing zing\AppData\Local\Programs\Python\Python311\Lib\ctypes\__init__.py", line 376, in __init__
+    self._handle = _dlopen(self._name, mode)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: Could not find module 'C:\Users\zing zing\Desktop\MediaStudio\.venv311\Lib\site-packages\torchcodec\libtorchcodec_core9.dll' (or one of its dependencies). Try using the full path with constructor syntax.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\zing zing\Desktop\MediaStudio\.venv311\Lib\site-packages\torchcodec\_internally_replaced_utils.py", line 132, in load_core_libraries
+    torch.ops.load_library(core_library_path)
+  File "C:\Users\zing zing\Desktop\MediaStudio\.venv311\Lib\site-packages\torch\_ops.py", line 1589, in load_library
+    raise OSError(f"Could not load this library: {path}") from e
+OSError: Could not load this library: C:\Users\zing zing\Desktop\MediaStudio\.venv311\Lib\site-packages\torchcodec\libtorchcodec_core9.dll
+
+FFmpeg version 8:
+Traceback (most recent call last):
+  File "C:\Users\zing zing\Desktop\MediaStudio\.venv311\Lib\site-packages\torch\_ops.py", line 1587, in load_library
+    ctypes.CDLL(path)
+  File "C:\Users\zing zing\AppData\Local\Programs\Python\Python311\Lib\ctypes\__init__.py", line 376, in __init__
+    self._handle = _dlopen(self._name, mode)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: Could not find module 'C:\Users\zing zing\Desktop\MediaStudio\.venv311\Lib\site-packages\torchcodec\libtorchcodec_core8.dll' (or one of its dependencies). Try using the full path with constructor syntax.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\zing zing\Desktop\MediaStudio\.venv311\Lib\site-packages\torchcodec\_internally_replaced_utils.py", line 132, in load_core_libraries
+    torch.ops.load_library(core_library_path)
+  File "C:\Users\zing zing\Desktop\MediaStudio\.venv311\Lib\site-packages\torch\_ops.py", line 1589, in load_library
+    raise OSError(f"Could not load this library: {path}") from e
+OSError: Could not load this library: C:\Users\zing zing\Desktop\MediaStudio\.venv311\Lib\site-packages\torchcodec\libtorchcodec_core8.dll
+
+FFmpeg version 7:
+Traceback (most recent call last):
+  File "C:\Users\zing zing\Desktop\MediaStudio\.venv311\Lib\site-packages\torch\_ops.py", line 1587, in load_library
+    ctypes.CDLL(path)
+  File "C:\Users\zing zing\AppData\Local\Programs\Python\Python311\Lib\ctypes\__init__.py", line 376, in __init__
+    self._handle = _dlopen(self._name, mode)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: Could not find module 'C:\Users\zing zing\Desktop\MediaStudio\.venv311\Lib\site-packages\torchcodec\libtorchcodec_core7.dll' (or one of its dependencies). Try using the full path with constructor syntax.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\zing zing\Desktop\MediaStudio\.venv311\Lib\site-packages\torchcodec\_internally_replaced_utils.py", line 132, in load_core_libraries
+    torch.ops.load_library(core_library_path)
+  File "C:\Users\zing zing\Desktop\MediaStudio\.venv311\Lib\site-packages\torch\_ops.py", line 1589, in load_library
+    raise OSError(f"Could not load this library: {path}") from e
+OSError: Could not load this library: C:\Users\zing zing\Desktop\MediaStudio\.venv311\Lib\site-packages\torchcodec\libtorchcodec_core7.dll
+
+FFmpeg version 6:
+Traceback (most recent call last):
+  File "C:\Users\zing zing\Desktop\MediaStudio\.venv311\Lib\site-packages\torch\_ops.py", line 1587, in load_library
+    ctypes.CDLL(path)
+  File "C:\Users\zing zing\AppData\Local\Programs\Python\Python311\Lib\ctypes\__init__.py", line 376, in __init__
+    self._handle = _dlopen(self._name, mode)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: Could not find module 'C:\Users\zing zing\Desktop\MediaStudio\.venv311\Lib\site-packages\torchcodec\libtorchcodec_core6.dll' (or one of its dependencies). Try using the full path with constructor syntax.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\zing zing\Desktop\MediaStudio\.venv311\Lib\site-packages\torchcodec\_internally_replaced_utils.py", line 132, in load_core_libraries
+    torch.ops.load_library(core_library_path)
+  File "C:\Users\zing zing\Desktop\MediaStudio\.venv311\Lib\site-packages\torch\_ops.py", line 1589, in load_library
+    raise OSError(f"Could not load this library: {path}") from e
+OSError: Could not load this library: C:\Users\zing zing\Desktop\MediaStudio\.venv311\Lib\site-packages\torchcodec\libtorchcodec_core6.dll
+
+FFmpeg version 5:
+Traceback (most recent call last):
+  File "C:\Users\zing zing\Desktop\MediaStudio\.venv311\Lib\site-packages\torch\_ops.py", line 1587, in load_library
+    ctypes.CDLL(path)
+  File "C:\Users\zing zing\AppData\Local\Programs\Python\Python311\Lib\ctypes\__init__.py", line 376, in __init__
+    self._handle = _dlopen(self._name, mode)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: Could not find module 'C:\Users\zing zing\Desktop\MediaStudio\.venv311\Lib\site-packages\torchcodec\libtorchcodec_core5.dll' (or one of its dependencies). Try using the full path with constructor syntax.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\zing zing\Desktop\MediaStudio\.venv311\Lib\site-packages\torchcodec\_internally_replaced_utils.py", line 132, in load_core_libraries
+    torch.ops.load_library(core_library_path)
+  File "C:\Users\zing zing\Desktop\MediaStudio\.venv311\Lib\site-packages\torch\_ops.py", line 1589, in load_library
+    raise OSError(f"Could not load this library: {path}") from e
+OSError: Could not load this library: C:\Users\zing zing\Desktop\MediaStudio\.venv311\Lib\site-packages\torchcodec\libtorchcodec_core5.dll
+
+FFmpeg version 4:
+Traceback (most recent call last):
+  File "C:\Users\zing zing\Desktop\MediaStudio\.venv311\Lib\site-packages\torch\_ops.py", line 1587, in load_library
+    ctypes.CDLL(path)
+  File "C:\Users\zing zing\AppData\Local\Programs\Python\Python311\Lib\ctypes\__init__.py", line 376, in __init__
+    self._handle = _dlopen(self._name, mode)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: Could not find module 'C:\Users\zing zing\Desktop\MediaStudio\.venv311\Lib\site-packages\torchcodec\libtorchcodec_core4.dll' (or one of its dependencies). Try using the full path with constructor syntax.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\zing zing\Desktop\MediaStudio\.venv311\Lib\site-packages\torchcodec\_internally_replaced_utils.py", line 132, in load_core_libraries
+    torch.ops.load_library(core_library_path)
+  File "C:\Users\zing zing\Desktop\MediaStudio\.venv311\Lib\site-packages\torch\_ops.py", line 1589, in load_library
+    raise OSError(f"Could not load this library: {path}") from e
+OSError: Could not load this library: C:\Users\zing zing\Desktop\MediaStudio\.venv311\Lib\site-packages\torchcodec\libtorchcodec_core4.dll
+[end of libtorchcodec loading traceback].
+183541 INFO: Applied quirks (see `speechbrain.utils.quirks`): [allow_tf32, disable_jit_profiling]
+183541 INFO: Excluded quirks specified by the `SB_DISABLE_QUIRKS` environment (comma-separated list): []
+306525 WARNING: Timed out while waiting for the child process to exit!
+8965 WARNING: Failed to collect submodules for 'torch.utils.tensorboard' because importing 'torch.utils.tensorboard' raised: ModuleNotFoundError: No module named 'tensorboard'
+C:\Users\zing zing\Desktop\MediaStudio\.venv311\Lib\site-packages\PyInstaller\utils\hooks\__init__.py:665: DeprecationWarning: `torch.distributed._sharding_spec` will be deprecated, use `torch.distributed._shard.sharding_spec` instead
+  __import__(name)
+C:\Users\zing zing\Desktop\MediaStudio\.venv311\Lib\site-packages\PyInstaller\utils\hooks\__init__.py:665: DeprecationWarning: `torch.distributed._sharded_tensor` will be deprecated, use `torch.distributed._shard.sharded_tensor` instead
+  __import__(name)
+C:\Users\zing zing\Desktop\MediaStudio\.venv311\Lib\site-packages\PyInstaller\utils\hooks\__init__.py:665: DeprecationWarning: `torch.distributed._shard.checkpoint` will be deprecated, use `torch.distributed.checkpoint` instead
+  __import__(name)
+425186 INFO: Module search paths (PYTHONPATH):
+['C:\\Users\\zing zing\\Desktop\\MediaStudio',
+ 'C:\\Users\\zing zing\\AppData\\Local\\MediaStudio\\code',
+ 'C:\\Users\\zing '
+ 'zing\\AppData\\Local\\Programs\\Python\\Python311\\python311.zip',
+ 'C:\\Users\\zing zing\\AppData\\Local\\Programs\\Python\\Python311\\DLLs',
+ 'C:\\Users\\zing zing\\AppData\\Local\\Programs\\Python\\Python311\\Lib',
+ 'C:\\Users\\zing zing\\AppData\\Local\\Programs\\Python\\Python311',
+ 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311',
+ 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages',
+ 'C:\\Users\\zing zing\\Desktop\\MediaStudio']
+428436 INFO: Appending 'binaries' from .spec
+428592 INFO: Appending 'datas' from .spec
+438141 INFO: checking Analysis
+438141 INFO: Building Analysis because Analysis-00.toc is non existent
+438141 INFO: Looking for Python shared library...
+438141 INFO: Using Python shared library: C:\Users\zing zing\AppData\Local\Programs\Python\Python311\python311.dll
+438141 INFO: Running Analysis Analysis-00.toc
+438141 INFO: Target bytecode optimization level: 0
+438141 INFO: Initializing module dependency graph...
+438141 INFO: Initializing module graph hook caches...
+438500 INFO: Analyzing modules for base_library.zip ...
+442937 INFO: Processing standard module hook 'hook-heapq.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+443442 INFO: Processing standard module hook 'hook-encodings.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+449814 INFO: Processing standard module hook 'hook-math.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+450277 INFO: Processing standard module hook 'hook-pickle.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+463200 INFO: Caching module dependency graph...
+463391 INFO: Analyzing C:\Users\zing zing\Desktop\MediaStudio\main.py
+464140 INFO: Processing standard module hook 'hook-multiprocessing.util.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+465139 INFO: Processing standard module hook 'hook-xml.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+467261 INFO: Processing standard module hook 'hook-_ctypes.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+469321 INFO: Processing standard module hook 'hook-difflib.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+469769 INFO: Processing standard module hook 'hook-platform.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+469824 INFO: Processing standard module hook 'hook-sqlite3.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+472483 INFO: Processing standard module hook 'hook-PySide6.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+473613 INFO: Processing standard module hook 'hook-shiboken6.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+474289 INFO: Processing standard module hook 'hook-PySide6.QtNetwork.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+482233 INFO: Processing standard module hook 'hook-PySide6.QtCore.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+492394 INFO: Processing standard module hook 'hook-PySide6.QtWidgets.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+503690 INFO: Processing standard module hook 'hook-PySide6.QtGui.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+579073 INFO: Analyzing hidden import 'PIL'
+579566 INFO: Processing standard module hook 'hook-PIL.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+579779 INFO: Analyzing hidden import 'PySide6.QtMultimedia'
+581579 INFO: Processing standard module hook 'hook-PySide6.QtMultimedia.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+597798 INFO: Analyzing hidden import 'PySide6.QtMultimediaWidgets'
+597829 INFO: Processing standard module hook 'hook-PySide6.QtMultimediaWidgets.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+599914 INFO: Analyzing hidden import 'PySide6.QtSvg'
+600918 INFO: Processing standard module hook 'hook-PySide6.QtSvg.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+602666 INFO: Analyzing hidden import 'anthropic'
+603278 INFO: Processing pre-safe-import-module hook 'hook-typing_extensions.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks\\pre_safe_import_module'
+603340 INFO: SetuptoolsInfo: initializing cached setuptools info...
+622889 INFO: Processing standard module hook 'hook-pydantic.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+638159 INFO: Processing standard module hook 'hook-zoneinfo.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+639149 INFO: Processing standard module hook 'hook-sysconfig.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+640371 INFO: Processing standard module hook 'hook-rich.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+646689 INFO: Processing standard module hook 'hook-pygments.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+654256 INFO: Processing standard module hook 'hook-chardet.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+669714 INFO: Processing standard module hook 'hook-webbrowser.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+682116 INFO: Processing standard module hook 'hook-urllib3.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+683783 INFO: Processing pre-safe-import-module hook 'hook-backports.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks\\pre_safe_import_module'
+683814 INFO: Setuptools: 'backports' appears to be a partial setuptools-vendored copy - extending search paths to ['C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\backports', 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\setuptools\\_vendor\\backports']!
+683846 INFO: Processing standard module hook 'hook-backports.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+688039 INFO: Processing standard module hook 'hook-certifi.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+688575 INFO: Processing standard module hook 'hook-charset_normalizer.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+689528 INFO: Processing standard module hook 'hook-cryptography.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+696248 INFO: hook-cryptography: cryptography does not seem to be using dynamically linked OpenSSL.
+704506 INFO: Processing standard module hook 'hook-anyio.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+729013 INFO: Processing standard module hook 'hook-opentelemetry.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+878438 INFO: Analyzing hidden import 'cv2'
+878508 INFO: Processing standard module hook 'hook-cv2.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+2800 WARNING: Failed to collect submodules for 'cv2.gapi' because importing 'cv2.gapi' raised: AttributeError: module 'cv2' has no attribute 'gapi_wip_gst_GStreamerPipeline'
+882933 INFO: Processing standard module hook 'hook-numpy.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+891448 INFO: Processing standard module hook 'hook-psutil.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+907323 INFO: Analyzing hidden import 'demucs'
+907368 INFO: Analyzing hidden import 'edge_tts'
+910663 INFO: Analyzing hidden import 'faster_whisper'
+911302 INFO: Processing standard module hook 'hook-av.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+928751 INFO: Processing standard module hook 'hook-PIL.Image.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+931868 INFO: Processing standard module hook 'hook-xml.etree.cElementTree.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+933297 INFO: Processing standard module hook 'hook-PIL.ImageFilter.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+938370 INFO: Processing standard module hook 'hook-pandas.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+956162 INFO: Processing standard module hook 'hook-scipy.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+960197 INFO: Processing standard module hook 'hook-pycparser.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+961083 INFO: Processing standard module hook 'hook-setuptools.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+961264 INFO: Processing pre-safe-import-module hook 'hook-distutils.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks\\pre_safe_import_module'
+961287 INFO: Processing pre-find-module-path hook 'hook-distutils.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks\\pre_find_module_path'
+963777 INFO: Processing standard module hook 'hook-distutils.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+963942 INFO: Processing standard module hook 'hook-distutils.util.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+964327 INFO: Processing standard module hook 'hook-_osx_support.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+964532 INFO: Processing pre-safe-import-module hook 'hook-packaging.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks\\pre_safe_import_module'
+966047 INFO: Processing pre-safe-import-module hook 'hook-jaraco.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks\\pre_safe_import_module'
+966052 INFO: Setuptools: 'jaraco' appears to be a partial setuptools-vendored copy - extending search paths to ['C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\jaraco', 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\setuptools\\_vendor\\jaraco']!
+966052 INFO: Processing pre-safe-import-module hook 'hook-jaraco.text.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks\\pre_safe_import_module'
+966064 INFO: Setuptools: 'jaraco.text' appears to be a setuptools-vendored copy - creating alias to 'setuptools._vendor.jaraco.text'!
+966152 INFO: Processing standard module hook 'hook-setuptools._vendor.jaraco.text.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+966172 INFO: Processing pre-safe-import-module hook 'hook-importlib_resources.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks\\pre_safe_import_module'
+966186 INFO: Processing pre-safe-import-module hook 'hook-jaraco.context.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks\\pre_safe_import_module'
+966262 INFO: Processing pre-safe-import-module hook 'hook-backports.tarfile.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks\\pre_safe_import_module'
+966631 INFO: Processing pre-safe-import-module hook 'hook-jaraco.functools.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks\\pre_safe_import_module'
+966721 INFO: Processing pre-safe-import-module hook 'hook-more_itertools.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks\\pre_safe_import_module'
+969597 INFO: Processing pre-safe-import-module hook 'hook-tomli.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks\\pre_safe_import_module'
+969609 INFO: Setuptools: 'tomli' appears to be a setuptools-vendored copy - creating alias to 'setuptools._vendor.tomli'!
+973622 INFO: Processing pre-safe-import-module hook 'hook-wheel.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks\\pre_safe_import_module'
+976465 INFO: Processing standard module hook 'hook-torch.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+22244 WARNING: Failed to collect submodules for 'torch.utils.tensorboard' because importing 'torch.utils.tensorboard' raised: ModuleNotFoundError: No module named 'tensorboard'
+C:\Users\zing zing\Desktop\MediaStudio\.venv311\Lib\site-packages\PyInstaller\utils\hooks\__init__.py:665: DeprecationWarning: `torch.distributed._sharding_spec` will be deprecated, use `torch.distributed._shard.sharding_spec` instead
+  __import__(name)
+C:\Users\zing zing\Desktop\MediaStudio\.venv311\Lib\site-packages\PyInstaller\utils\hooks\__init__.py:665: DeprecationWarning: `torch.distributed._sharded_tensor` will be deprecated, use `torch.distributed._shard.sharded_tensor` instead
+  __import__(name)
+C:\Users\zing zing\Desktop\MediaStudio\.venv311\Lib\site-packages\PyInstaller\utils\hooks\__init__.py:665: DeprecationWarning: `torch.distributed._shard.checkpoint` will be deprecated, use `torch.distributed.checkpoint` instead
+  __import__(name)
+1073815 INFO: hook-torch: this torch build does not depend on MKL...
+1081959 INFO: Processing standard module hook 'hook-matplotlib.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+1086402 INFO: Processing standard module hook 'hook-matplotlib.backend_bases.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+1089599 INFO: Processing standard module hook 'hook-jinja2.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+1092951 INFO: Processing standard module hook 'hook-matplotlib.backends.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+1093384 INFO: Processing standard module hook 'hook-matplotlib.pyplot.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+1094017 INFO: Processing standard module hook 'hook-matplotlib.figure.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+1098073 INFO: Processing standard module hook 'hook-dateutil.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+1107582 INFO: Processing pre-safe-import-module hook 'hook-gi.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks\\pre_safe_import_module'
+1108621 INFO: Processing standard module hook 'hook-py.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+1160741 INFO: Processing standard module hook 'hook-scipy.linalg.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+1162869 INFO: Processing standard module hook 'hook-scipy.special._ufuncs.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+1182284 INFO: Processing standard module hook 'hook-shelve.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+1204892 INFO: Processing pre-safe-import-module hook 'hook-tensorflow.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\pre_safe_import_module'
+1208488 INFO: Processing standard module hook 'hook-torchaudio.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+1235829 INFO: Processing standard module hook 'hook-scipy.io.matlab.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+1238921 INFO: Processing pre-safe-import-module hook 'hook-win32com.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\pre_safe_import_module'
+1253888 INFO: Processing standard module hook 'hook-fsspec.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+1307542 INFO: Processing standard module hook 'hook-wcwidth.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+1338377 INFO: Processing standard module hook 'hook-cloudpickle.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+1360572 INFO: Processing standard module hook 'hook-onnxruntime.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+1366752 INFO: Processing standard module hook 'hook-numba.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+1367017 INFO: Processing standard module hook 'hook-llvmlite.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+1444148 INFO: Processing standard module hook 'hook-scipy.spatial._ckdtree.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+1452192 INFO: Processing standard module hook 'hook-scipy.spatial.transform.rotation.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+1459734 INFO: Processing standard module hook 'hook-scipy.stats._stats.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+1462386 INFO: Processing standard module hook 'hook-scipy.sparse.csgraph.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+1495129 INFO: Processing standard module hook 'hook-orjson.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+1507356 INFO: Processing standard module hook 'hook-scipy.special._ellip_harm_2.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+1526274 INFO: Processing standard module hook 'hook-xml.dom.domreg.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+1542922 INFO: Processing standard module hook 'hook-pyarrow.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+1556052 INFO: Processing standard module hook 'hook-pandas.io.formats.style.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+1570825 INFO: Processing standard module hook 'hook-pandas.plotting.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+1578108 INFO: Processing standard module hook 'hook-openpyxl.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+1591783 INFO: Processing standard module hook 'hook-sqlalchemy.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+1616337 INFO: Processing standard module hook 'hook-pandas.io.clipboard.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+1638976 INFO: Processing standard module hook 'hook-soundfile.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+1653243 INFO: Processing standard module hook 'hook-uvicorn.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+1656946 INFO: Processing standard module hook 'hook-websockets.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+1665655 INFO: Processing standard module hook 'hook-transformers.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+1678719 INFO: Processing standard module hook 'hook-regex.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+1683916 INFO: Processing standard module hook 'hook-datasets.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+1693552 INFO: Processing standard module hook 'hook-librosa.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+1709881 INFO: Processing standard module hook 'hook-yt_dlp.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\yt_dlp\\__pyinstaller'
+WARNING: Using Crypto since Cryptodome is not available. Install with: python3 -m pip install pycryptodomex
+701 WARNING: Failed to collect submodules for 'urllib3.contrib.emscripten' because importing 'urllib3.contrib.emscripten' raised: ModuleNotFoundError: No module named 'js'
+1715165 WARNING: collect_data_files - skipping data collection for module 'curl_cffi' as it is not a package.
+1715165 WARNING: collect_data_files - skipping data collection for module 'yt_dlp_ejs' as it is not a package.
+1717485 INFO: Processing standard module hook 'hook-Crypto.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+1794403 INFO: Processing standard module hook 'hook-sklearn.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+1798467 INFO: Processing standard module hook 'hook-sklearn.utils.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+1799495 INFO: Processing standard module hook 'hook-narwhals.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+1811341 INFO: Processing standard module hook 'hook-sklearn.externals.array_api_compat.numpy.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+1811711 INFO: Processing standard module hook 'hook-sklearn.externals.array_api_compat.cupy.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+1811843 INFO: Processing standard module hook 'hook-sklearn.externals.array_api_compat.torch.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+1812075 INFO: Processing standard module hook 'hook-sklearn.externals.array_api_compat.dask.array.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+1814867 INFO: Processing standard module hook 'hook-sklearn.metrics.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+1841326 INFO: Processing standard module hook 'hook-sklearn.metrics.cluster.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+1841843 INFO: Processing standard module hook 'hook-sklearn.metrics.pairwise.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+1842982 INFO: Processing standard module hook 'hook-sklearn.cluster.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+1844069 INFO: Processing standard module hook 'hook-sklearn.neighbors.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+1844903 INFO: Processing standard module hook 'hook-sklearn.linear_model.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+1998656 INFO: Processing standard module hook 'hook-mako.codegen.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+2009802 INFO: Processing standard module hook 'hook-grpc.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+2014877 INFO: Processing standard module hook 'hook-sklearn.tree.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+2032557 INFO: Processing standard module hook 'hook-pytz.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+2039315 INFO: Analyzing hidden import 'funasr'
+2039399 INFO: Analyzing hidden import 'imageio_ffmpeg'
+2039430 INFO: Processing standard module hook 'hook-imageio_ffmpeg.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+2039816 INFO: Analyzing hidden import 'keyring'
+2039901 INFO: Processing standard module hook 'hook-keyring.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+2043021 INFO: Processing pre-safe-import-module hook 'hook-importlib_metadata.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks\\pre_safe_import_module'
+2043175 INFO: Processing standard module hook 'hook-importlib_metadata.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+2043830 INFO: Processing pre-safe-import-module hook 'hook-zipp.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks\\pre_safe_import_module'
+2044261 INFO: Analyzing hidden import 'pyannote'
+2044277 INFO: Analyzing hidden import 'rapidocr_onnxruntime'
+2045326 INFO: Processing standard module hook 'hook-shapely.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+2048094 INFO: Analyzing hidden import 'speechbrain'
+2048946 INFO: Processing standard module hook 'hook-ruamel.yaml.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+2053395 INFO: Analyzing hidden import 'voxcpm'
+2101345 INFO: Processing standard module hook 'hook-aliyunsdkcore.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+2151335 INFO: Processing standard module hook 'hook-jieba.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+2218103 INFO: Processing standard module hook 'hook-lightning.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+2222680 INFO: Processing standard module hook 'hook-hydra.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+C:\Users\zing zing\Desktop\MediaStudio\.venv311\Lib\site-packages\modelscope\models\cv\anydoor\ldm\models\diffusion\ddpm.py:235: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+  tmp = self.betas**2 (tmp * (1 - self.alphas_cumprod))
+2283059 INFO: Processing pre-safe-import-module hook 'hook-inflect.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks\\pre_safe_import_module'
+2283360 INFO: Processing pre-safe-import-module hook 'hook-typeguard.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks\\pre_safe_import_module'
+2285039 INFO: Analyzing hidden import 'whisper'
+2285766 INFO: Analyzing hidden import 'PySide6.Qt3DAnimation'
+2286214 INFO: Processing standard module hook 'hook-PySide6.Qt3DAnimation.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+2298377 INFO: Processing standard module hook 'hook-PySide6.Qt3DCore.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+2311157 INFO: Processing standard module hook 'hook-PySide6.Qt3DRender.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+2372587 INFO: Processing standard module hook 'hook-PySide6.QtOpenGL.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+2386044 INFO: Analyzing hidden import 'PySide6.Qt3DExtras'
+2386378 INFO: Processing standard module hook 'hook-PySide6.Qt3DExtras.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+2397504 INFO: Analyzing hidden import 'PySide6.Qt3DInput'
+2397622 INFO: Processing standard module hook 'hook-PySide6.Qt3DInput.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+2406996 INFO: Analyzing hidden import 'PySide6.Qt3DLogic'
+2407087 INFO: Processing standard module hook 'hook-PySide6.Qt3DLogic.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+2415457 INFO: Analyzing hidden import 'PySide6.QtAsyncio'
+2415738 INFO: Analyzing hidden import 'PySide6.QtAxContainer'
+2415823 INFO: Processing standard module hook 'hook-PySide6.QtAxContainer.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+2424235 INFO: Analyzing hidden import 'PySide6.QtBluetooth'
+2424532 INFO: Processing standard module hook 'hook-PySide6.QtBluetooth.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+2429841 INFO: Analyzing hidden import 'PySide6.QtCanvasPainter'
+2430481 INFO: Processing standard module hook 'hook-PySide6.QtQuick.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+2446669 INFO: Processing standard module hook 'hook-PySide6.QtQml.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+2509536 WARNING: QtLibraryInfo(PySide6): QML plugin binary 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PySide6\\qml\\Qt\\labs\\assetdownloader\\qmlassetdownloaderprivateplugin.dll' does not exist!
+2876542 INFO: Analyzing hidden import 'PySide6.QtCharts'
+2877173 INFO: Processing standard module hook 'hook-PySide6.QtCharts.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+2890517 INFO: Analyzing hidden import 'PySide6.QtConcurrent'
+2890580 INFO: Processing standard module hook 'hook-PySide6.QtConcurrent.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+2895403 INFO: Analyzing hidden import 'PySide6.QtDBus'
+2895594 INFO: Processing standard module hook 'hook-PySide6.QtDBus.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+2903714 INFO: Analyzing hidden import 'PySide6.QtDataVisualization'
+2904213 INFO: Processing standard module hook 'hook-PySide6.QtDataVisualization.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+2915258 INFO: Analyzing hidden import 'PySide6.QtDesigner'
+2915440 INFO: Processing standard module hook 'hook-PySide6.QtDesigner.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+2946704 INFO: Analyzing hidden import 'PySide6.QtGraphs'
+2947401 INFO: Processing standard module hook 'hook-PySide6.QtGraphs.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+2959939 INFO: Analyzing hidden import 'PySide6.QtGraphsWidgets'
+2960230 INFO: Processing standard module hook 'hook-PySide6.QtGraphsWidgets.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+2965840 INFO: Processing standard module hook 'hook-PySide6.QtQuickWidgets.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+2977098 INFO: Analyzing hidden import 'PySide6.QtHelp'
+2977216 INFO: Processing standard module hook 'hook-PySide6.QtHelp.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+2987247 INFO: Analyzing hidden import 'PySide6.QtHttpServer'
+2987381 INFO: Processing standard module hook 'hook-PySide6.QtHttpServer.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+2996817 INFO: Analyzing hidden import 'PySide6.QtLabsStyleKit'
+2996869 INFO: Analyzing hidden import 'PySide6.QtLocation'
+2997126 INFO: Processing standard module hook 'hook-PySide6.QtLocation.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+3016102 INFO: Processing standard module hook 'hook-PySide6.QtPositioning.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+3035231 INFO: Analyzing hidden import 'PySide6.QtNetworkAuth'
+3035391 INFO: Processing standard module hook 'hook-PySide6.QtNetworkAuth.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+3049905 INFO: Analyzing hidden import 'PySide6.QtNfc'
+3050223 INFO: Processing standard module hook 'hook-PySide6.QtNfc.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+3062352 INFO: Analyzing hidden import 'PySide6.QtOpenGLWidgets'
+3062401 INFO: Processing standard module hook 'hook-PySide6.QtOpenGLWidgets.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+3071760 INFO: Analyzing hidden import 'PySide6.QtPdf'
+3071925 INFO: Processing standard module hook 'hook-PySide6.QtPdf.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+3082998 INFO: Analyzing hidden import 'PySide6.QtPdfWidgets'
+3083079 INFO: Processing standard module hook 'hook-PySide6.QtPdfWidgets.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+3092353 INFO: Analyzing hidden import 'PySide6.QtPrintSupport'
+3092483 INFO: Processing standard module hook 'hook-PySide6.QtPrintSupport.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+3103335 INFO: Analyzing hidden import 'PySide6.QtQmlFeatures'
+3103400 INFO: Analyzing hidden import 'PySide6.QtQuick3D'
+3103485 INFO: Processing standard module hook 'hook-PySide6.QtQuick3D.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+3119704 INFO: Analyzing hidden import 'PySide6.QtQuickControls2'
+3119775 INFO: Processing standard module hook 'hook-PySide6.QtQuickControls2.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+3129384 INFO: Analyzing hidden import 'PySide6.QtQuickTest'
+3129433 INFO: Analyzing hidden import 'PySide6.QtRemoteObjects'
+3129533 INFO: Processing standard module hook 'hook-PySide6.QtRemoteObjects.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+3137393 INFO: Analyzing hidden import 'PySide6.QtScxml'
+3137528 INFO: Processing standard module hook 'hook-PySide6.QtScxml.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+3148477 INFO: Analyzing hidden import 'PySide6.QtSensors'
+3148642 INFO: Processing standard module hook 'hook-PySide6.QtSensors.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+3163173 INFO: Analyzing hidden import 'PySide6.QtSerialBus'
+3163404 INFO: Processing standard module hook 'hook-PySide6.QtSerialBus.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+3187069 INFO: Analyzing hidden import 'PySide6.QtSerialPort'
+3187167 INFO: Processing standard module hook 'hook-PySide6.QtSerialPort.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+3196925 INFO: Analyzing hidden import 'PySide6.QtSpatialAudio'
+3197042 INFO: Processing standard module hook 'hook-PySide6.QtSpatialAudio.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+3211148 INFO: Analyzing hidden import 'PySide6.QtSql'
+3211659 INFO: Processing standard module hook 'hook-PySide6.QtSql.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+3236001 INFO: Analyzing hidden import 'PySide6.QtStateMachine'
+3236100 INFO: Processing standard module hook 'hook-PySide6.QtStateMachine.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+3244028 INFO: Analyzing hidden import 'PySide6.QtSvgWidgets'
+3244103 INFO: Processing standard module hook 'hook-PySide6.QtSvgWidgets.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+3253376 INFO: Analyzing hidden import 'PySide6.QtTest'
+3253472 INFO: Processing standard module hook 'hook-PySide6.QtTest.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+3262916 INFO: Analyzing hidden import 'PySide6.QtTextToSpeech'
+3262981 INFO: Processing standard module hook 'hook-PySide6.QtTextToSpeech.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+3283303 INFO: Analyzing hidden import 'PySide6.QtUiTools'
+3283369 INFO: Processing standard module hook 'hook-PySide6.QtUiTools.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+3292747 INFO: Analyzing hidden import 'PySide6.QtWebChannel'
+3292812 INFO: Processing standard module hook 'hook-PySide6.QtWebChannel.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+3300726 INFO: Analyzing hidden import 'PySide6.QtWebEngineCore'
+3301045 INFO: Processing standard module hook 'hook-PySide6.QtWebEngineCore.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+3334684 INFO: Analyzing hidden import 'PySide6.QtWebEngineQuick'
+3334784 INFO: Processing standard module hook 'hook-PySide6.QtWebEngineQuick.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+3346848 INFO: Analyzing hidden import 'PySide6.QtWebEngineWidgets'
+3346944 INFO: Processing standard module hook 'hook-PySide6.QtWebEngineWidgets.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+3358859 INFO: Analyzing hidden import 'PySide6.QtWebSockets'
+3358980 INFO: Processing standard module hook 'hook-PySide6.QtWebSockets.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+3367867 INFO: Analyzing hidden import 'PySide6.QtWebView'
+3367938 INFO: Analyzing hidden import 'PySide6.QtXml'
+3368065 INFO: Processing standard module hook 'hook-PySide6.QtXml.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+3376499 INFO: Analyzing hidden import 'PySide6._config'
+3376531 INFO: Analyzing hidden import 'PySide6._git_pyside_version'
+3376593 INFO: Analyzing hidden import 'PySide6.scripts'
+3376593 INFO: Analyzing hidden import 'PySide6.scripts.deploy'
+3376662 INFO: Analyzing hidden import 'PySide6.scripts.metaobjectdump'
+3376778 INFO: Analyzing hidden import 'PySide6.scripts.project'
+3376878 INFO: Analyzing hidden import 'PySide6.scripts.project_lib'
+3377333 INFO: Analyzing hidden import 'PySide6.scripts.pyside_tool'
+3377414 INFO: Analyzing hidden import 'PySide6.scripts.qml'
+3377495 INFO: Analyzing hidden import 'PySide6.scripts.qtpy2cpp'
+3377549 INFO: Analyzing hidden import 'PySide6.support'
+3377581 INFO: Analyzing hidden import 'PySide6.support.auto_property_helper'
+3377695 INFO: Analyzing hidden import 'PySide6.support.deprecated'
+3377733 INFO: Analyzing hidden import 'PySide6.support.generate_pyi'
+3377780 INFO: Analyzing hidden import 'PySide6.support.qml_component_helper'
+3377849 INFO: Analyzing hidden import 'cv2.config'
+3377865 INFO: Analyzing hidden import 'cv2.config-3'
+3377927 INFO: Analyzing hidden import 'cv2.cv2'
+3377927 INFO: Analyzing hidden import 'cv2.data'
+3377950 INFO: Analyzing hidden import 'cv2.load_config_py2'
+3377996 INFO: Analyzing hidden import 'cv2.mat_wrapper'
+3378050 INFO: Analyzing hidden import 'cv2.misc'
+3378097 INFO: Analyzing hidden import 'cv2.typing'
+3378166 INFO: Analyzing hidden import 'cv2.utils'
+3378181 INFO: Analyzing hidden import 'demucs.__main__'
+3380457 INFO: Analyzing hidden import 'demucs.grids'
+3380472 INFO: Analyzing hidden import 'demucs.grids._explorers'
+3380519 INFO: Analyzing hidden import 'demucs.grids.mdx'
+3380557 INFO: Analyzing hidden import 'demucs.grids.mdx_extra'
+3380588 INFO: Analyzing hidden import 'demucs.grids.mdx_refine'
+3380635 INFO: Analyzing hidden import 'demucs.grids.mmi'
+3380689 INFO: Analyzing hidden import 'demucs.grids.mmi_ft'
+3380736 INFO: Analyzing hidden import 'demucs.grids.repro'
+3380758 INFO: Analyzing hidden import 'demucs.grids.repro_ft'
+3380805 INFO: Analyzing hidden import 'demucs.grids.sdx23'
+3380842 INFO: Analyzing hidden import 'demucs.wdemucs'
+3380858 INFO: Analyzing hidden import 'edge_tts.__main__'
+3380990 INFO: Analyzing hidden import 'faster_whisper.assets'
+3381005 INFO: Analyzing hidden import 'imageio_ffmpeg.binaries'
+3381021 INFO: Analyzing hidden import 'pyannote.audio'
+3389030 INFO: Analyzing hidden import 'pyannote.audio.__main__'
+3389136 INFO: Analyzing hidden import 'pyannote.audio.augmentation'
+3389244 INFO: Analyzing hidden import 'pyannote.audio.augmentation.registry'
+3389282 INFO: Analyzing hidden import 'pyannote.audio.core.callback'
+3389313 INFO: Analyzing hidden import 'pyannote.audio.models'
+3389329 INFO: Analyzing hidden import 'pyannote.audio.models.embedding'
+3391846 INFO: Processing pre-safe-import-module hook 'hook-platformdirs.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks\\pre_safe_import_module'
+3391952 INFO: Processing standard module hook 'hook-platformdirs.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+3392870 INFO: Analyzing hidden import 'pyannote.audio.models.embedding.debug'
+3392908 INFO: Analyzing hidden import 'pyannote.audio.models.embedding.wespeaker.convert'
+3392955 INFO: Analyzing hidden import 'pyannote.audio.models.segmentation'
+3393108 INFO: Analyzing hidden import 'pyannote.audio.models.segmentation.debug'
+3393140 INFO: Analyzing hidden import 'pyannote.audio.models.separation'
+3393224 INFO: Analyzing hidden import 'pyannote.audio.pipelines.pyannoteai'
+3393240 INFO: Analyzing hidden import 'pyannote.audio.pipelines.pyannoteai.local'
+3393293 INFO: Analyzing hidden import 'pyannote.audio.pipelines.pyannoteai.sdk'
+3393441 INFO: Analyzing hidden import 'pyannote.audio.pipelines.utils.hook'
+3393494 INFO: Analyzing hidden import 'pyannote.audio.tasks'
+3396804 INFO: Analyzing hidden import 'pyannote.audio.utils.preprocessors'
+3396851 INFO: Analyzing hidden import 'pyannote.audio.utils.preview'
+3396908 INFO: Analyzing hidden import 'pyannote.audio.utils.probe'
+3396939 INFO: Analyzing hidden import 'pyannote.core.utils.cluster'
+3397036 INFO: Analyzing hidden import 'pyannote.core.utils.hierarchy'
+3397121 INFO: Analyzing hidden import 'pyannote.core.utils.numpy'
+3397168 INFO: Analyzing hidden import 'pyannote.core.utils.random'
+3397190 INFO: Analyzing hidden import 'pyannote.database.cli'
+3397243 INFO: Analyzing hidden import 'pyannote.metrics.cli'
+3397468 INFO: Analyzing hidden import 'pyannote.metrics.errors'
+3397522 INFO: Analyzing hidden import 'pyannote.metrics.errors.identification'
+3397607 INFO: Analyzing hidden import 'pyannote.metrics.errors.segmentation'
+3397653 INFO: Analyzing hidden import 'pyannote.metrics.plot'
+3397669 INFO: Analyzing hidden import 'pyannote.metrics.plot.binary_classification'
+3397723 INFO: Analyzing hidden import 'pyannote.metrics.transcription'
+3397769 INFO: Analyzing hidden import 'pyannote.pipeline.experiment'
+3397838 INFO: Analyzing hidden import 'torch._dynamo.backends.cudagraphs'
+3397926 INFO: Analyzing hidden import 'torch._dynamo.backends.inductor'
+3397939 INFO: Analyzing hidden import 'torch._dynamo.backends.onnxrt'
+3397970 INFO: Analyzing hidden import 'torch._dynamo.backends.tensorrt'
+3397992 INFO: Analyzing hidden import 'torch._dynamo.backends.torchxla'
+3398039 INFO: Analyzing hidden import 'torch._dynamo.backends.tvm'
+3398067 INFO: Analyzing hidden import 'torch._dynamo.polyfills.copy'
+3398092 INFO: Analyzing hidden import 'torch._dynamo.polyfills.fx'
+3398123 INFO: Analyzing hidden import 'torch._dynamo.polyfills.tensor'
+3398154 INFO: Analyzing hidden import 'torch._dynamo.precompile_package'
+3398308 INFO: Analyzing hidden import 'torch._dynamo.profiler'
+3398355 INFO: Analyzing hidden import 'torch._dynamo.test_case'
+3398424 INFO: Analyzing hidden import 'torch._dynamo.test_dont_skip_tracing_functions'
+3398455 INFO: Analyzing hidden import 'torch._dynamo.test_minifier_common'
+3398524 INFO: Analyzing hidden import 'torch._export.converter'
+3398838 INFO: Analyzing hidden import 'torch._export.db.examples.assume_constant_result'
+3398867 INFO: Analyzing hidden import 'torch._export.db.examples.autograd_function'
+3398893 INFO: Analyzing hidden import 'torch._export.db.examples.class_method'
+3398924 INFO: Analyzing hidden import 'torch._export.db.examples.cond_branch_class_method'
+3398955 INFO: Analyzing hidden import 'torch._export.db.examples.cond_branch_nested_function'
+3398993 INFO: Analyzing hidden import 'torch._export.db.examples.cond_branch_nonlocal_variables'
+3399024 INFO: Analyzing hidden import 'torch._export.db.examples.cond_closed_over_variable'
+3399040 INFO: Analyzing hidden import 'torch._export.db.examples.cond_operands'
+3399077 INFO: Analyzing hidden import 'torch._export.db.examples.cond_predicate'
+3399093 INFO: Analyzing hidden import 'torch._export.db.examples.constrain_as_size_example'
+3399124 INFO: Analyzing hidden import 'torch._export.db.examples.constrain_as_value_example'
+3399156 INFO: Analyzing hidden import 'torch._export.db.examples.decorator'
+3399178 INFO: Analyzing hidden import 'torch._export.db.examples.dictionary'
+3399209 INFO: Analyzing hidden import 'torch._export.db.examples.dynamic_shape_assert'
+3399225 INFO: Analyzing hidden import 'torch._export.db.examples.dynamic_shape_constructor'
+3399256 INFO: Analyzing hidden import 'torch._export.db.examples.dynamic_shape_if_guard'
+3399358 INFO: Analyzing hidden import 'torch._export.db.examples.dynamic_shape_map'
+3399378 INFO: Analyzing hidden import 'torch._export.db.examples.dynamic_shape_round'
+3399394 INFO: Analyzing hidden import 'torch._export.db.examples.dynamic_shape_slicing'
+3399425 INFO: Analyzing hidden import 'torch._export.db.examples.dynamic_shape_view'
+3399457 INFO: Analyzing hidden import 'torch._export.db.examples.fn_with_kwargs'
+3399479 INFO: Analyzing hidden import 'torch._export.db.examples.list_contains'
+3399494 INFO: Analyzing hidden import 'torch._export.db.examples.list_unpack'
+3399510 INFO: Analyzing hidden import 'torch._export.db.examples.model_attr_mutation'
+3399541 INFO: Analyzing hidden import 'torch._export.db.examples.nested_function'
+3399572 INFO: Analyzing hidden import 'torch._export.db.examples.null_context_manager'
+3399595 INFO: Analyzing hidden import 'torch._export.db.examples.optional_input'
+3399610 INFO: Analyzing hidden import 'torch._export.db.examples.pytree_flatten'
+3399642 INFO: Analyzing hidden import 'torch._export.db.examples.scalar_output'
+3399654 INFO: Analyzing hidden import 'torch._export.db.examples.specialized_attribute'
+3399679 INFO: Analyzing hidden import 'torch._export.db.examples.static_for_loop'
+3399708 INFO: Analyzing hidden import 'torch._export.db.examples.static_if'
+3399738 INFO: Analyzing hidden import 'torch._export.db.examples.tensor_setattr'
+3399754 INFO: Analyzing hidden import 'torch._export.db.examples.type_reflection_method'
+3399779 INFO: Analyzing hidden import 'torch._export.db.examples.unsupported_operator'
+3399796 INFO: Analyzing hidden import 'torch._export.db.examples.user_input_mutation'
+3399828 INFO: Analyzing hidden import 'torch._export.db.gen_example'
+3399910 INFO: Analyzing hidden import 'torch._export.passes.constant_folding'
+3399957 INFO: Analyzing hidden import 'torch._export.passes.functionalize_side_effectful_ops_pass'
+3400011 INFO: Analyzing hidden import 'torch._export.passes.remove_runtime_assertions'
+3400026 INFO: Analyzing hidden import 'torch._export.serde.dynamic_shapes'
+3400080 INFO: Analyzing hidden import 'torch._export.serde.schema_check'
+3400211 INFO: Analyzing hidden import 'torch._export.tools'
+3400242 INFO: Analyzing hidden import 'torch._functorch._aot_autograd.fx_utils'
+3400311 INFO: Analyzing hidden import 'torch._functorch.benchmark_utils'
+3400358 INFO: Analyzing hidden import 'torch._functorch.pytree_hacks'
+3400396 INFO: Analyzing hidden import 'torch._functorch.top_operators_github_usage'
+3400481 INFO: Analyzing hidden import 'torch._inductor.__autotune_main__'
+3400512 INFO: Analyzing hidden import 'torch._inductor.aoti_eager'
+3400581 INFO: Analyzing hidden import 'torch._inductor.autoheuristic.artifacts'
+3400581 INFO: Analyzing hidden import 'torch._inductor.autoheuristic.artifacts._MMRankingA100'
+3400681 INFO: Analyzing hidden import 'torch._inductor.autoheuristic.artifacts._MMRankingH100'
+3400781 INFO: Analyzing hidden import 'torch._inductor.autoheuristic.artifacts._PadMMA100'
+3400828 INFO: Analyzing hidden import 'torch._inductor.autoheuristic.artifacts._PadMMH200'
+3400897 INFO: Analyzing hidden import 'torch._inductor.cache'
+3400944 INFO: Analyzing hidden import 'torch._inductor.codegen.cutedsl._cutedsl_utils'
+3400982 INFO: Analyzing hidden import 'torch._inductor.codegen.cutlass.lib_extensions.cutlass_mock_imports'
+3400982 INFO: Analyzing hidden import 'torch._inductor.codegen.cutlass.lib_extensions.cutlass_mock_imports.cuda'
+3401029 INFO: Analyzing hidden import 'torch._inductor.codegen.cutlass.lib_extensions.cutlass_mock_imports.cuda.cudart'
+3401060 INFO: Analyzing hidden import 'torch._inductor.codegen.cutlass.lib_extensions.cutlass_mock_imports.pydot'
+3401076 INFO: Analyzing hidden import 'torch._inductor.codegen.cutlass.lib_extensions.cutlass_mock_imports.scipy'
+3401114 INFO: Analyzing hidden import 'torch._inductor.codegen.rocm.ck_conv_template'
+3401176 INFO: Analyzing hidden import 'torch._inductor.compile_worker.__main__'
+3401198 INFO: Analyzing hidden import 'torch._inductor.fuzzer'
+3401361 INFO: Analyzing hidden import 'torch._inductor.fx_passes.graph_view'
+3401399 INFO: Analyzing hidden import 'torch._inductor.fx_passes.overlap_manual_scheduling'
+3401530 INFO: Analyzing hidden import 'torch._inductor.fx_passes.serialized_patterns'
+3401530 INFO: Analyzing hidden import 'torch._inductor.fx_passes.serialized_patterns._sfdp_pattern_1'
+3401631 INFO: Analyzing hidden import 'torch._inductor.fx_passes.serialized_patterns._sfdp_pattern_10'
+3401716 INFO: Analyzing hidden import 'torch._inductor.fx_passes.serialized_patterns._sfdp_pattern_11'
+3402325 INFO: Analyzing hidden import 'torch._inductor.fx_passes.serialized_patterns._sfdp_pattern_12'
+3402424 INFO: Analyzing hidden import 'torch._inductor.fx_passes.serialized_patterns._sfdp_pattern_13'
+3402467 INFO: Analyzing hidden import 'torch._inductor.fx_passes.serialized_patterns._sfdp_pattern_14'
+3402567 INFO: Analyzing hidden import 'torch._inductor.fx_passes.serialized_patterns._sfdp_pattern_15'
+3402637 INFO: Analyzing hidden import 'torch._inductor.fx_passes.serialized_patterns._sfdp_pattern_16'
+3402822 INFO: Analyzing hidden import 'torch._inductor.fx_passes.serialized_patterns._sfdp_pattern_17'
+3402896 INFO: Analyzing hidden import 'torch._inductor.fx_passes.serialized_patterns._sfdp_pattern_18'
+3402981 INFO: Analyzing hidden import 'torch._inductor.fx_passes.serialized_patterns._sfdp_pattern_19'
+3403044 INFO: Analyzing hidden import 'torch._inductor.fx_passes.serialized_patterns._sfdp_pattern_2'
+3403141 INFO: Analyzing hidden import 'torch._inductor.fx_passes.serialized_patterns._sfdp_pattern_20'
+3403213 INFO: Analyzing hidden import 'torch._inductor.fx_passes.serialized_patterns._sfdp_pattern_21'
+3403282 INFO: Analyzing hidden import 'torch._inductor.fx_passes.serialized_patterns._sfdp_pattern_22'
+3403376 INFO: Analyzing hidden import 'torch._inductor.fx_passes.serialized_patterns._sfdp_pattern_23'
+3403460 INFO: Analyzing hidden import 'torch._inductor.fx_passes.serialized_patterns._sfdp_pattern_24'
+3403514 INFO: Analyzing hidden import 'torch._inductor.fx_passes.serialized_patterns._sfdp_pattern_25'
+3403654 INFO: Analyzing hidden import 'torch._inductor.fx_passes.serialized_patterns._sfdp_pattern_26'
+3403783 INFO: Analyzing hidden import 'torch._inductor.fx_passes.serialized_patterns._sfdp_pattern_27'
+3403930 INFO: Analyzing hidden import 'torch._inductor.fx_passes.serialized_patterns._sfdp_pattern_28'
+3404061 INFO: Analyzing hidden import 'torch._inductor.fx_passes.serialized_patterns._sfdp_pattern_29'
+3404215 INFO: Analyzing hidden import 'torch._inductor.fx_passes.serialized_patterns._sfdp_pattern_3'
+3404299 INFO: Analyzing hidden import 'torch._inductor.fx_passes.serialized_patterns._sfdp_pattern_30'
+3404467 INFO: Analyzing hidden import 'torch._inductor.fx_passes.serialized_patterns._sfdp_pattern_4'
+3404548 INFO: Analyzing hidden import 'torch._inductor.fx_passes.serialized_patterns._sfdp_pattern_5'
+3404651 INFO: Analyzing hidden import 'torch._inductor.fx_passes.serialized_patterns._sfdp_pattern_6'
+3404742 INFO: Analyzing hidden import 'torch._inductor.fx_passes.serialized_patterns._sfdp_pattern_7'
+3404843 INFO: Analyzing hidden import 'torch._inductor.fx_passes.serialized_patterns._sfdp_pattern_8'
+3404932 INFO: Analyzing hidden import 'torch._inductor.fx_passes.serialized_patterns._sfdp_pattern_9'
+3405032 INFO: Analyzing hidden import 'torch._inductor.fx_passes.serialized_patterns.addmm_pattern'
+3405079 INFO: Analyzing hidden import 'torch._inductor.fx_passes.serialized_patterns.bmm_pattern'
+3405101 INFO: Analyzing hidden import 'torch._inductor.fx_passes.serialized_patterns.mm_pattern'
+3405132 INFO: Analyzing hidden import 'torch._inductor.heuristics.template.cutedsl'
+3405217 INFO: Analyzing hidden import 'torch._inductor.heuristics.triton_codegen'
+3405386 INFO: Analyzing hidden import 'torch._inductor.kernel.conv'
+3405502 INFO: Analyzing hidden import 'torch._inductor.kernel.custom_op'
+3405649 INFO: Analyzing hidden import 'torch._inductor.kernel.flex_gemm.output_layout_cutedsl'
+3405687 INFO: Analyzing hidden import 'torch._inductor.kernel.mm_grouped'
+3405765 INFO: Analyzing hidden import 'torch._inductor.kernel.vendored_templates.cutedsl.kernels'
+3405765 INFO: Analyzing hidden import 'torch._inductor.kernel.vendored_templates.cutedsl.kernels.cutedsl_grouped_gemm'
+3406019 INFO: Analyzing hidden import 'torch._inductor.kernel.vendored_templates.flydsl.kernels.gemm_gfx950'
+3406259 INFO: Analyzing hidden import 'torch._inductor.kernel.vendored_templates.flydsl.kernels.grouped_config'
+3406280 INFO: Analyzing hidden import 'torch._inductor.kernel.vendored_templates.flydsl.kernels.grouped_gemm_gfx950'
+3406443 INFO: Analyzing hidden import 'torch._inductor.kernel.vendored_templates.flydsl.kernels.grouped_scheduling'
+3406581 INFO: Analyzing hidden import 'torch._inductor.kernel.vendored_templates.flydsl.kernels.mxfp8_gemm_utils'
+3406628 INFO: Analyzing hidden import 'torch._inductor.kernel.vendored_templates.flydsl.kernels.mxfp8_grouped_gemm_gfx950'
+3406794 INFO: Analyzing hidden import 'torch._inductor.lookup_table'
+3406883 INFO: Analyzing hidden import 'torch._inductor.mock_cache'
+3406971 INFO: Analyzing hidden import 'torch._inductor.package.build_package'
+3406993 INFO: Analyzing hidden import 'torch._inductor.profiler'
+3407071 INFO: Analyzing hidden import 'torch._inductor.runtime.halide_helpers'
+3407136 INFO: Analyzing hidden import 'torch._inductor.runtime.proton_utils'
+3407198 INFO: Analyzing hidden import 'torch._inductor.runtime.triton_lazy_compile'
+3407248 INFO: Analyzing hidden import 'torch._inductor.template_heuristics'
+3407279 INFO: Analyzing hidden import 'torch._inductor.test_case'
+3407310 INFO: Analyzing hidden import 'torch._lazy.computation'
+3407340 INFO: Analyzing hidden import 'torch._lazy.config'
+3407361 INFO: Analyzing hidden import 'torch._lazy.debug'
+3407381 INFO: Analyzing hidden import 'torch._lazy.extract_compiled_graph'
+3407477 INFO: Analyzing hidden import 'torch._lazy.ir_cache'
+3407500 INFO: Analyzing hidden import 'torch._native.cutedsl'
+3407515 INFO: Analyzing hidden import 'torch._native.cutedsl.dtypes'
+3407547 INFO: Analyzing hidden import 'torch._native.cutedsl.hw_caps'
+3407578 INFO: Analyzing hidden import 'torch._native.cutedsl.launch'
+3407616 INFO: Analyzing hidden import 'torch._native.cutedsl.plan_cache'
+3407662 INFO: Analyzing hidden import 'torch._native.ops.reductions.kernel_coltile'
+3408269 INFO: Analyzing hidden import 'torch._native.triton.const_tensor_wrapper'
+3408297 INFO: Analyzing hidden import 'torch._native.utils'
+3408317 INFO: Analyzing hidden import 'torch._native.utils.capability'
+3408343 INFO: Analyzing hidden import 'torch._native.utils.lazy'
+3408359 INFO: Analyzing hidden import 'torch._numpy.testing'
+3408652 INFO: Analyzing hidden import 'torch._opaque_base'
+3408672 INFO: Analyzing hidden import 'torch._prims.context'
+3408721 INFO: Analyzing hidden import 'torch._prims.executor'
+3408753 INFO: Analyzing hidden import 'torch._python_dispatcher'
+3408806 INFO: Analyzing hidden import 'torch._streambase'
+3408822 INFO: Analyzing hidden import 'torch.ao.ns._numeric_suite'
+3408913 INFO: Analyzing hidden import 'torch.ao.pruning._experimental'
+3408913 INFO: Analyzing hidden import 'torch.ao.pruning._experimental.activation_sparsifier'
+3408921 INFO: Analyzing hidden import 'torch.ao.pruning._experimental.activation_sparsifier.activation_sparsifier'
+3408984 INFO: Analyzing hidden import 'torch.ao.pruning._experimental.data_scheduler'
+3409185 INFO: Analyzing hidden import 'torch.ao.pruning._experimental.data_sparsifier.lightning'
+3409185 INFO: Analyzing hidden import 'torch.ao.pruning._experimental.data_sparsifier.lightning.callbacks'
+3409185 INFO: Analyzing hidden import 'torch.ao.pruning._experimental.data_sparsifier.lightning.callbacks._data_sparstity_utils'
+3409216 INFO: Analyzing hidden import 'torch.ao.pruning._experimental.data_sparsifier.lightning.callbacks.data_sparsity'
+3409264 INFO: Analyzing hidden import 'torch.ao.pruning._experimental.data_sparsifier.quantization_utils'
+3409290 INFO: Analyzing hidden import 'torch.ao.pruning._experimental.pruner'
+3409609 INFO: Analyzing hidden import 'torch.ao.quantization._correct_bias'
+3409690 INFO: Analyzing hidden import 'torch.ao.quantization._equalize'
+3409728 INFO: Analyzing hidden import 'torch.ao.quantization._learnable_fake_quantize'
+3409774 INFO: Analyzing hidden import 'torch.ao.quantization.backend_config._qnnpack_pt2e'
+3409821 INFO: Analyzing hidden import 'torch.ao.quantization.backend_config.x86'
+3409843 INFO: Analyzing hidden import 'torch.ao.quantization.fx._model_report'
+3409843 INFO: Analyzing hidden import 'torch.ao.quantization.fx._model_report.detector'
+3410040 INFO: Analyzing hidden import 'torch.ao.quantization.fx._model_report.model_report'
+3410667 INFO: Analyzing hidden import 'torch.ao.quantization.fx.lower_to_qnnpack'
+3410683 INFO: Analyzing hidden import 'torch.ao.quantization.fx.lstm_utils'
+3410736 INFO: Analyzing hidden import 'torch.autograd._functions.utils'
+3410768 INFO: Analyzing hidden import 'torch.backends._coreml'
+3410768 INFO: Analyzing hidden import 'torch.backends._coreml.preprocess'
+3410799 INFO: Analyzing hidden import 'torch.backends._nnapi'
+3410814 INFO: Analyzing hidden import 'torch.backends._nnapi.prepare'
+3411211 INFO: Analyzing hidden import 'torch.backends.xeon'
+3411211 INFO: Analyzing hidden import 'torch.backends.xeon.run_cpu'
+3411322 INFO: Analyzing hidden import 'torch.contrib'
+3411322 INFO: Analyzing hidden import 'torch.contrib._tensorboard_vis'
+3411385 INFO: Analyzing hidden import 'torch.cuda.comm'
+3411400 INFO: Analyzing hidden import 'torch.distributed._checkpointable'
+3411423 INFO: Analyzing hidden import 'torch.distributed._composable.replicate_with_fsdp'
+3411486 INFO: Analyzing hidden import 'torch.distributed._nccl4py'
+3411672 INFO: Analyzing hidden import 'torch.distributed._serialization'
+3411703 INFO: Analyzing hidden import 'torch.distributed._shard.checkpoint'
+3411737 INFO: Analyzing hidden import 'torch.distributed._shard.checkpoint._async_executor'
+3411737 ERROR: Hidden import 'torch.distributed._shard.checkpoint._async_executor' not found
+3411737 INFO: Analyzing hidden import 'torch.distributed._shard.checkpoint._async_process_executor'
+3411737 ERROR: Hidden import 'torch.distributed._shard.checkpoint._async_process_executor' not found
+3411737 INFO: Analyzing hidden import 'torch.distributed._shard.checkpoint._async_thread_executor'
+3411737 ERROR: Hidden import 'torch.distributed._shard.checkpoint._async_thread_executor' not found
+3411737 INFO: Analyzing hidden import 'torch.distributed._shard.checkpoint._checkpointer'
+3411737 ERROR: Hidden import 'torch.distributed._shard.checkpoint._checkpointer' not found
+3411737 INFO: Analyzing hidden import 'torch.distributed._shard.checkpoint._consolidate_hf_safetensors'
+3411737 ERROR: Hidden import 'torch.distributed._shard.checkpoint._consolidate_hf_safetensors' not found
+3411737 INFO: Analyzing hidden import 'torch.distributed._shard.checkpoint._dedup_save_plans'
+3411737 ERROR: Hidden import 'torch.distributed._shard.checkpoint._dedup_save_plans' not found
+3411737 INFO: Analyzing hidden import 'torch.distributed._shard.checkpoint._dedup_tensors'
+3411737 ERROR: Hidden import 'torch.distributed._shard.checkpoint._dedup_tensors' not found
+3411737 INFO: Analyzing hidden import 'torch.distributed._shard.checkpoint._experimental'
+3411737 ERROR: Hidden import 'torch.distributed._shard.checkpoint._experimental' not found
+3411737 INFO: Analyzing hidden import 'torch.distributed._shard.checkpoint._experimental.barriers'
+3411737 ERROR: Hidden import 'torch.distributed._shard.checkpoint._experimental.barriers' not found
+3411737 INFO: Analyzing hidden import 'torch.distributed._shard.checkpoint._experimental.builder'
+3411737 ERROR: Hidden import 'torch.distributed._shard.checkpoint._experimental.builder' not found
+3411737 INFO: Analyzing hidden import 'torch.distributed._shard.checkpoint._experimental.checkpoint_process'
+3411737 ERROR: Hidden import 'torch.distributed._shard.checkpoint._experimental.checkpoint_process' not found
+3411737 INFO: Analyzing hidden import 'torch.distributed._shard.checkpoint._experimental.checkpoint_reader'
+3411737 ERROR: Hidden import 'torch.distributed._shard.checkpoint._experimental.checkpoint_reader' not found
+3411737 INFO: Analyzing hidden import 'torch.distributed._shard.checkpoint._experimental.checkpoint_writer'
+3411737 ERROR: Hidden import 'torch.distributed._shard.checkpoint._experimental.checkpoint_writer' not found
+3411737 INFO: Analyzing hidden import 'torch.distributed._shard.checkpoint._experimental.checkpointer'
+3411737 ERROR: Hidden import 'torch.distributed._shard.checkpoint._experimental.checkpointer' not found
+3411737 INFO: Analyzing hidden import 'torch.distributed._shard.checkpoint._experimental.config'
+3411737 ERROR: Hidden import 'torch.distributed._shard.checkpoint._experimental.config' not found
+3411737 INFO: Analyzing hidden import 'torch.distributed._shard.checkpoint._experimental.staging'
+3411737 ERROR: Hidden import 'torch.distributed._shard.checkpoint._experimental.staging' not found
+3411737 INFO: Analyzing hidden import 'torch.distributed._shard.checkpoint._experimental.types'
+3411737 ERROR: Hidden import 'torch.distributed._shard.checkpoint._experimental.types' not found
+3411737 INFO: Analyzing hidden import 'torch.distributed._shard.checkpoint._experimental.utils'
+3411737 ERROR: Hidden import 'torch.distributed._shard.checkpoint._experimental.utils' not found
+3411737 INFO: Analyzing hidden import 'torch.distributed._shard.checkpoint._extension'
+3411753 ERROR: Hidden import 'torch.distributed._shard.checkpoint._extension' not found
+3411753 INFO: Analyzing hidden import 'torch.distributed._shard.checkpoint._fsspec_filesystem'
+3411753 ERROR: Hidden import 'torch.distributed._shard.checkpoint._fsspec_filesystem' not found
+3411753 INFO: Analyzing hidden import 'torch.distributed._shard.checkpoint._hf_utils'
+3411753 ERROR: Hidden import 'torch.distributed._shard.checkpoint._hf_utils' not found
+3411753 INFO: Analyzing hidden import 'torch.distributed._shard.checkpoint._nested_dict'
+3411753 ERROR: Hidden import 'torch.distributed._shard.checkpoint._nested_dict' not found
+3411753 INFO: Analyzing hidden import 'torch.distributed._shard.checkpoint._pg_transport'
+3411753 ERROR: Hidden import 'torch.distributed._shard.checkpoint._pg_transport' not found
+3411753 INFO: Analyzing hidden import 'torch.distributed._shard.checkpoint._sharded_tensor_utils'
+3411753 ERROR: Hidden import 'torch.distributed._shard.checkpoint._sharded_tensor_utils' not found
+3411753 INFO: Analyzing hidden import 'torch.distributed._shard.checkpoint._state_dict_stager'
+3411753 ERROR: Hidden import 'torch.distributed._shard.checkpoint._state_dict_stager' not found
+3411753 INFO: Analyzing hidden import 'torch.distributed._shard.checkpoint._storage_utils'
+3411753 ERROR: Hidden import 'torch.distributed._shard.checkpoint._storage_utils' not found
+3411753 INFO: Analyzing hidden import 'torch.distributed._shard.checkpoint._traverse'
+3411753 ERROR: Hidden import 'torch.distributed._shard.checkpoint._traverse' not found
+3411753 INFO: Analyzing hidden import 'torch.distributed._shard.checkpoint._version'
+3411753 ERROR: Hidden import 'torch.distributed._shard.checkpoint._version' not found
+3411753 INFO: Analyzing hidden import 'torch.distributed._shard.checkpoint.api'
+3411753 ERROR: Hidden import 'torch.distributed._shard.checkpoint.api' not found
+3411753 INFO: Analyzing hidden import 'torch.distributed._shard.checkpoint.default_planner'
+3411753 ERROR: Hidden import 'torch.distributed._shard.checkpoint.default_planner' not found
+3411753 INFO: Analyzing hidden import 'torch.distributed._shard.checkpoint.filesystem'
+3411753 ERROR: Hidden import 'torch.distributed._shard.checkpoint.filesystem' not found
+3411753 INFO: Analyzing hidden import 'torch.distributed._shard.checkpoint.format_utils'
+3411753 ERROR: Hidden import 'torch.distributed._shard.checkpoint.format_utils' not found
+3411753 INFO: Analyzing hidden import 'torch.distributed._shard.checkpoint.fsspec_filesystem'
+3411753 ERROR: Hidden import 'torch.distributed._shard.checkpoint.fsspec_filesystem' not found
+3411753 INFO: Analyzing hidden import 'torch.distributed._shard.checkpoint.hf_storage'
+3411753 ERROR: Hidden import 'torch.distributed._shard.checkpoint.hf_storage' not found
+3411753 INFO: Analyzing hidden import 'torch.distributed._shard.checkpoint.logger'
+3411753 ERROR: Hidden import 'torch.distributed._shard.checkpoint.logger' not found
+3411753 INFO: Analyzing hidden import 'torch.distributed._shard.checkpoint.logging_handlers'
+3411753 ERROR: Hidden import 'torch.distributed._shard.checkpoint.logging_handlers' not found
+3411753 INFO: Analyzing hidden import 'torch.distributed._shard.checkpoint.metadata'
+3411753 ERROR: Hidden import 'torch.distributed._shard.checkpoint.metadata' not found
+3411753 INFO: Analyzing hidden import 'torch.distributed._shard.checkpoint.optimizer'
+3411753 ERROR: Hidden import 'torch.distributed._shard.checkpoint.optimizer' not found
+3411753 INFO: Analyzing hidden import 'torch.distributed._shard.checkpoint.planner'
+3411753 ERROR: Hidden import 'torch.distributed._shard.checkpoint.planner' not found
+3411753 INFO: Analyzing hidden import 'torch.distributed._shard.checkpoint.planner_helpers'
+3411753 ERROR: Hidden import 'torch.distributed._shard.checkpoint.planner_helpers' not found
+3411753 INFO: Analyzing hidden import 'torch.distributed._shard.checkpoint.protocol'
+3411753 ERROR: Hidden import 'torch.distributed._shard.checkpoint.protocol' not found
+3411753 INFO: Analyzing hidden import 'torch.distributed._shard.checkpoint.quantized_hf_storage'
+3411753 ERROR: Hidden import 'torch.distributed._shard.checkpoint.quantized_hf_storage' not found
+3411753 INFO: Analyzing hidden import 'torch.distributed._shard.checkpoint.resharding'
+3411768 ERROR: Hidden import 'torch.distributed._shard.checkpoint.resharding' not found
+3411768 INFO: Analyzing hidden import 'torch.distributed._shard.checkpoint.staging'
+3411768 ERROR: Hidden import 'torch.distributed._shard.checkpoint.staging' not found
+3411768 INFO: Analyzing hidden import 'torch.distributed._shard.checkpoint.state_dict'
+3411768 ERROR: Hidden import 'torch.distributed._shard.checkpoint.state_dict' not found
+3411768 INFO: Analyzing hidden import 'torch.distributed._shard.checkpoint.state_dict_loader'
+3411768 ERROR: Hidden import 'torch.distributed._shard.checkpoint.state_dict_loader' not found
+3411768 INFO: Analyzing hidden import 'torch.distributed._shard.checkpoint.state_dict_saver'
+3411768 ERROR: Hidden import 'torch.distributed._shard.checkpoint.state_dict_saver' not found
+3411768 INFO: Analyzing hidden import 'torch.distributed._shard.checkpoint.stateful'
+3411768 ERROR: Hidden import 'torch.distributed._shard.checkpoint.stateful' not found
+3411768 INFO: Analyzing hidden import 'torch.distributed._shard.checkpoint.storage'
+3411768 ERROR: Hidden import 'torch.distributed._shard.checkpoint.storage' not found
+3411768 INFO: Analyzing hidden import 'torch.distributed._shard.checkpoint.utils'
+3411768 ERROR: Hidden import 'torch.distributed._shard.checkpoint.utils' not found
+3411768 INFO: Analyzing hidden import 'torch.distributed._shard.sharded_optim'
+3411827 INFO: Analyzing hidden import 'torch.distributed._shard.sharded_tensor.logger'
+3411880 INFO: Analyzing hidden import 'torch.distributed._sharded_tensor'
+3411912 INFO: Analyzing hidden import 'torch.distributed._sharded_tensor._ops'
+3411912 ERROR: Hidden import 'torch.distributed._sharded_tensor._ops' not found
+3411912 INFO: Analyzing hidden import 'torch.distributed._sharded_tensor._ops._common'
+3411912 ERROR: Hidden import 'torch.distributed._sharded_tensor._ops._common' not found
+3411912 INFO: Analyzing hidden import 'torch.distributed._sharded_tensor._ops.binary_cmp'
+3411912 ERROR: Hidden import 'torch.distributed._sharded_tensor._ops.binary_cmp' not found
+3411912 INFO: Analyzing hidden import 'torch.distributed._sharded_tensor._ops.init'
+3411912 ERROR: Hidden import 'torch.distributed._sharded_tensor._ops.init' not found
+3411912 INFO: Analyzing hidden import 'torch.distributed._sharded_tensor._ops.misc_ops'
+3411912 ERROR: Hidden import 'torch.distributed._sharded_tensor._ops.misc_ops' not found
+3411912 INFO: Analyzing hidden import 'torch.distributed._sharded_tensor._ops.tensor_ops'
+3411912 ERROR: Hidden import 'torch.distributed._sharded_tensor._ops.tensor_ops' not found
+3411912 INFO: Analyzing hidden import 'torch.distributed._sharded_tensor.api'
+3411912 ERROR: Hidden import 'torch.distributed._sharded_tensor.api' not found
+3411912 INFO: Analyzing hidden import 'torch.distributed._sharded_tensor.logger'
+3411912 ERROR: Hidden import 'torch.distributed._sharded_tensor.logger' not found
+3411912 INFO: Analyzing hidden import 'torch.distributed._sharded_tensor.logging_handlers'
+3411912 ERROR: Hidden import 'torch.distributed._sharded_tensor.logging_handlers' not found
+3411912 INFO: Analyzing hidden import 'torch.distributed._sharded_tensor.metadata'
+3411912 ERROR: Hidden import 'torch.distributed._sharded_tensor.metadata' not found
+3411912 INFO: Analyzing hidden import 'torch.distributed._sharded_tensor.reshard'
+3411912 ERROR: Hidden import 'torch.distributed._sharded_tensor.reshard' not found
+3411912 INFO: Analyzing hidden import 'torch.distributed._sharded_tensor.shard'
+3411912 ERROR: Hidden import 'torch.distributed._sharded_tensor.shard' not found
+3411912 INFO: Analyzing hidden import 'torch.distributed._sharded_tensor.utils'
+3411923 ERROR: Hidden import 'torch.distributed._sharded_tensor.utils' not found
+3411923 INFO: Analyzing hidden import 'torch.distributed._sharding_spec'
+3411939 INFO: Analyzing hidden import 'torch.distributed._sharding_spec._internals'
+3411939 ERROR: Hidden import 'torch.distributed._sharding_spec._internals' not found
+3411939 INFO: Analyzing hidden import 'torch.distributed._sharding_spec.api'
+3411939 ERROR: Hidden import 'torch.distributed._sharding_spec.api' not found
+3411939 INFO: Analyzing hidden import 'torch.distributed._sharding_spec.chunk_sharding_spec'
+3411939 ERROR: Hidden import 'torch.distributed._sharding_spec.chunk_sharding_spec' not found
+3411939 INFO: Analyzing hidden import 'torch.distributed._sharding_spec.chunk_sharding_spec_ops'
+3411939 ERROR: Hidden import 'torch.distributed._sharding_spec.chunk_sharding_spec_ops' not found
+3411939 INFO: Analyzing hidden import 'torch.distributed._sharding_spec.chunk_sharding_spec_ops._common'
+3411939 ERROR: Hidden import 'torch.distributed._sharding_spec.chunk_sharding_spec_ops._common' not found
+3411939 INFO: Analyzing hidden import 'torch.distributed._sharding_spec.chunk_sharding_spec_ops.embedding'
+3411939 ERROR: Hidden import 'torch.distributed._sharding_spec.chunk_sharding_spec_ops.embedding' not found
+3411939 INFO: Analyzing hidden import 'torch.distributed._sharding_spec.chunk_sharding_spec_ops.embedding_bag'
+3411939 ERROR: Hidden import 'torch.distributed._sharding_spec.chunk_sharding_spec_ops.embedding_bag' not found
+3411955 INFO: Analyzing hidden import 'torch.distributed._symmetric_memory._nccl'
+3411986 INFO: Analyzing hidden import 'torch.distributed._symmetric_memory._nvshmem_triton'
+3412071 INFO: Analyzing hidden import 'torch.distributed._symmetric_memory._rocshmem_triton'
+3412173 INFO: Analyzing hidden import 'torch.distributed._symmetric_memory._shmem_triton'
+3412204 INFO: Analyzing hidden import 'torch.distributed._tensor.api'
+3412224 INFO: Analyzing hidden import 'torch.distributed._tensor.placement_types'
+3412242 INFO: Analyzing hidden import 'torch.distributed._token_switch'
+3412304 INFO: Analyzing hidden import 'torch.distributed._tools.ilp_utils'
+3412356 INFO: Analyzing hidden import 'torch.distributed._tools.sac_ilp'
+3412403 INFO: Analyzing hidden import 'torch.distributed._transport'
+3412625 INFO: Analyzing hidden import 'torch.distributed._transport._serialization'
+3412672 INFO: Analyzing hidden import 'torch.distributed._transport.nixl'
+3412841 INFO: Analyzing hidden import 'torch.distributed.algorithms._quantization'
+3412857 INFO: Analyzing hidden import 'torch.distributed.algorithms._quantization.quantization'
+3412907 INFO: Analyzing hidden import 'torch.distributed.algorithms.ddp_comm_hooks.ddp_zero_hook'
+3412957 INFO: Analyzing hidden import 'torch.distributed.algorithms.model_averaging.hierarchical_model_averager'
+3412988 INFO: Analyzing hidden import 'torch.distributed.argparse_util'
+3413026 INFO: Analyzing hidden import 'torch.distributed.checkpoint._checkpointer'
+3413057 INFO: Analyzing hidden import 'torch.distributed.checkpoint._dedup_tensors'
+3413089 INFO: Analyzing hidden import 'torch.distributed.checkpoint._experimental'
+3413477 INFO: Analyzing hidden import 'torch.distributed.checkpoint._fsspec_filesystem'
+3413508 INFO: Analyzing hidden import 'torch.distributed.collective_utils'
+3413559 INFO: Analyzing hidden import 'torch.distributed.debug'
+3414224 INFO: Analyzing hidden import 'torch.distributed.elastic.control_plane'
+3414244 INFO: Analyzing hidden import 'torch.distributed.elastic.rendezvous.etcd_server'
+3414307 INFO: Analyzing hidden import 'torch.distributed.elastic.utils.data'
+3414392 INFO: Analyzing hidden import 'torch.distributed.flight_recorder.components.loader'
+3414429 INFO: Analyzing hidden import 'torch.distributed.flight_recorder.fr_trace'
+3414461 INFO: Analyzing hidden import 'torch.distributed.fsdp._trace_utils'
+3414507 INFO: Analyzing hidden import 'torch.distributed.launch'
+3414630 INFO: Analyzing hidden import 'torch.distributed.pipelining'
+3415934 INFO: Analyzing hidden import 'torch.distributed.pipelining._schedule_visualizer'
+3416003 INFO: Analyzing hidden import 'torch.distributed.rpc._testing'
+3416072 INFO: Analyzing hidden import 'torch.distributed.rpc.rref_proxy'
+3416119 INFO: Analyzing hidden import 'torch.distributed.tensor._ops._common_rules'
+3416163 INFO: Analyzing hidden import 'torch.distributed.tensor._ops.strategy_validation'
+3416936 INFO: Analyzing hidden import 'torch.distributed.tensor._shards_wrapper'
+3417086 INFO: Analyzing hidden import 'torch.distributed.tensor.debug._op_coverage'
+3417142 INFO: Analyzing hidden import 'torch.distributed.tensor.experimental._tp_transform'
+3417242 INFO: Analyzing hidden import 'torch.distributed.tensor.parallel.input_reshard'
+3417286 INFO: Analyzing hidden import 'torch.export._remove_auto_functionalized_pass'
+3417317 INFO: Analyzing hidden import 'torch.export._safeguard'
+3417355 INFO: Analyzing hidden import 'torch.export._swap'
+3417433 INFO: Analyzing hidden import 'torch.export._wrapper_utils'
+3417455 INFO: Analyzing hidden import 'torch.export.custom_obj'
+3417485 INFO: Analyzing hidden import 'torch.export.experimental'
+3417586 INFO: Analyzing hidden import 'torch.export.passes'
+3417618 INFO: Analyzing hidden import 'torch.func._random'
+3417679 INFO: Analyzing hidden import 'torch.fx.annotate'
+3417694 INFO: Analyzing hidden import 'torch.fx.experimental.accelerator_partitioner'
+3417872 INFO: Analyzing hidden import 'torch.fx.experimental.debug'
+3417903 INFO: Analyzing hidden import 'torch.fx.experimental.graph_gradual_typechecker'
+3418072 INFO: Analyzing hidden import 'torch.fx.experimental.merge_matmul'
+3418104 INFO: Analyzing hidden import 'torch.fx.experimental.meta_tracer'
+3418173 INFO: Analyzing hidden import 'torch.fx.experimental.migrate_gradual_types.constraint_generator'
+3418474 INFO: Analyzing hidden import 'torch.fx.experimental.migrate_gradual_types.constraint_transformation'
+3418621 INFO: Analyzing hidden import 'torch.fx.experimental.migrate_gradual_types.transform_to_z3'
+3418721 INFO: Analyzing hidden import 'torch.fx.experimental.normalize'
+3418806 INFO: Analyzing hidden import 'torch.fx.experimental.rewriter'
+3418859 INFO: Analyzing hidden import 'torch.fx.experimental.unification.match'
+3418937 INFO: Analyzing hidden import 'torch.fx.experimental.unify_refinements'
+3418975 INFO: Analyzing hidden import 'torch.fx.passes.annotate_getitem_nodes'
+3419006 INFO: Analyzing hidden import 'torch.fx.passes.backends'
+3419022 INFO: Analyzing hidden import 'torch.fx.passes.backends.cudagraphs'
+3419060 INFO: Analyzing hidden import 'torch.fx.passes.dialect'
+3419060 INFO: Analyzing hidden import 'torch.fx.passes.dialect.common'
+3419075 INFO: Analyzing hidden import 'torch.fx.passes.dialect.common.cse_pass'
+3419107 INFO: Analyzing hidden import 'torch.fx.passes.pass_manager'
+3419160 INFO: Analyzing hidden import 'torch.fx.passes.regional_inductor_invoke_subgraph'
+3419198 INFO: Analyzing hidden import 'torch.fx.passes.tests'
+3419214 INFO: Analyzing hidden import 'torch.fx.passes.tests._test_split_utils'
+3419292 INFO: Analyzing hidden import 'torch.fx.passes.tests.test_pass_manager'
+3419318 INFO: Analyzing hidden import 'torch.fx.passes.utils.source_matcher_utils'
+3419376 INFO: Analyzing hidden import 'torch.jit._decompositions'
+3419438 INFO: Analyzing hidden import 'torch.jit._logging'
+3419460 INFO: Analyzing hidden import 'torch.jit._passes'
+3419460 INFO: Analyzing hidden import 'torch.jit._passes._property_propagation'
+3419507 INFO: Analyzing hidden import 'torch.jit._pickle'
+3419538 INFO: Analyzing hidden import 'torch.jit._shape_functions'
+3419739 INFO: Analyzing hidden import 'torch.jit.generate_bytecode'
+3419761 INFO: Analyzing hidden import 'torch.jit.mobile'
+3419808 INFO: Analyzing hidden import 'torch.jit.quantized'
+3419850 INFO: Analyzing hidden import 'torch.jit.supported_ops'
+3419908 INFO: Analyzing hidden import 'torch.jit.unsupported_tensor_ops'
+3419939 INFO: Analyzing hidden import 'torch.multiprocessing.pool'
+3420008 INFO: Analyzing hidden import 'torch.nativert'
+3420008 INFO: Analyzing hidden import 'torch.nativert.backends'
+3420008 INFO: Analyzing hidden import 'torch.nativert.backends._lower_utils'
+3420078 INFO: Analyzing hidden import 'torch.nn.attention.bias'
+3420140 INFO: Analyzing hidden import 'torch.nn.attention.experimental'
+3420162 INFO: Analyzing hidden import 'torch.nn.attention.experimental._paged_attention'
+3420209 INFO: Analyzing hidden import 'torch.nn.attention.experimental._scaled_dot_product_attention_quantized'
+3420240 INFO: Analyzing hidden import 'torch.nn.attention.varlen'
+3420325 INFO: Analyzing hidden import 'torch.nn.backends'
+3420325 INFO: Analyzing hidden import 'torch.nn.backends.thnn'
+3420356 INFO: Analyzing hidden import 'torch.nn.cpp'
+3420394 INFO: Analyzing hidden import 'torch.nn.quantizable.modules.activation'
+3420410 INFO: Analyzing hidden import 'torch.nn.quantizable.modules.rnn'
+3420425 INFO: Analyzing hidden import 'torch.nn.quantized._reference'
+3420525 INFO: Analyzing hidden import 'torch.nn.quantized._reference.modules.conv'
+3420541 INFO: Analyzing hidden import 'torch.nn.quantized._reference.modules.linear'
+3420563 INFO: Analyzing hidden import 'torch.nn.quantized._reference.modules.rnn'
+3420594 INFO: Analyzing hidden import 'torch.nn.quantized._reference.modules.sparse'
+3420610 INFO: Analyzing hidden import 'torch.nn.quantized._reference.modules.utils'
+3420626 INFO: Analyzing hidden import 'torch.nn.quantized.dynamic.modules'
+3420663 INFO: Analyzing hidden import 'torch.nn.quantized.dynamic.modules.conv'
+3420679 INFO: Analyzing hidden import 'torch.nn.quantized.dynamic.modules.linear'
+3420710 INFO: Analyzing hidden import 'torch.nn.quantized.dynamic.modules.rnn'
+3420726 INFO: Analyzing hidden import 'torch.nn.quantized.modules.activation'
+3420742 INFO: Analyzing hidden import 'torch.nn.quantized.modules.batchnorm'
+3420779 INFO: Analyzing hidden import 'torch.nn.quantized.modules.conv'
+3420795 INFO: Analyzing hidden import 'torch.nn.quantized.modules.dropout'
+3420826 INFO: Analyzing hidden import 'torch.nn.quantized.modules.embedding_ops'
+3420842 INFO: Analyzing hidden import 'torch.nn.quantized.modules.functional_modules'
+3420864 INFO: Analyzing hidden import 'torch.nn.quantized.modules.linear'
+3420895 INFO: Analyzing hidden import 'torch.nn.quantized.modules.normalization'
+3420927 INFO: Analyzing hidden import 'torch.nn.quantized.modules.rnn'
+3420942 INFO: Analyzing hidden import 'torch.nn.quantized.modules.utils'
+3420964 INFO: Analyzing hidden import 'torch.nn.utils._deprecation_utils'
+3420996 INFO: Analyzing hidden import 'torch.nn.utils._per_sample_grad'
+3421042 INFO: Analyzing hidden import 'torch.onnx._internal.exporter._isolated'
+3421112 INFO: Analyzing hidden import 'torch.onnx._internal.exporter._testing'
+3421143 INFO: Analyzing hidden import 'torch.onnx._internal.torchscript_exporter._experimental'
+3421165 INFO: Analyzing hidden import 'torch.onnx._internal.torchscript_exporter.verification'
+3421243 INFO: Analyzing hidden import 'torch.onnx.operators'
+3421265 INFO: Analyzing hidden import 'torch.onnx.symbolic_opset10'
+3421297 INFO: Analyzing hidden import 'torch.onnx.symbolic_opset11'
+3421312 INFO: Analyzing hidden import 'torch.onnx.symbolic_opset13'
+3421328 INFO: Analyzing hidden import 'torch.onnx.symbolic_opset14'
+3421359 INFO: Analyzing hidden import 'torch.onnx.symbolic_opset15'
+3421381 INFO: Analyzing hidden import 'torch.onnx.symbolic_opset16'
+3421398 INFO: Analyzing hidden import 'torch.onnx.symbolic_opset17'
+3421429 INFO: Analyzing hidden import 'torch.onnx.symbolic_opset18'
+3421445 INFO: Analyzing hidden import 'torch.onnx.symbolic_opset19'
+3421466 INFO: Analyzing hidden import 'torch.onnx.symbolic_opset20'
+3421481 INFO: Analyzing hidden import 'torch.onnx.symbolic_opset7'
+3421513 INFO: Analyzing hidden import 'torch.onnx.symbolic_opset8'
+3421528 INFO: Analyzing hidden import 'torch.onnx.testing'
+3421559 INFO: Analyzing hidden import 'torch.onnx.utils'
+3421566 INFO: Analyzing hidden import 'torch.onnx.verification'
+3421597 INFO: Analyzing hidden import 'torch.optim._multi_tensor'
+3421629 INFO: Analyzing hidden import 'torch.package._mock'
+3421644 INFO: Analyzing hidden import 'torch.profiler._cuspy.observers.node_timer'
+3421729 INFO: Analyzing hidden import 'torch.profiler._trace_validator'
+3421782 INFO: Analyzing hidden import 'torch.profiler.python_tracer'
+3421814 INFO: Analyzing hidden import 'torch.quantization._numeric_suite'
+3421845 INFO: Analyzing hidden import 'torch.quantization._numeric_suite_fx'
+3421883 INFO: Analyzing hidden import 'torch.quantization._quantized_conversions'
+3421945 INFO: Analyzing hidden import 'torch.quantization.fx'
+3421967 INFO: Analyzing hidden import 'torch.quantization.fx._equalize'
+3422014 INFO: Analyzing hidden import 'torch.quantization.fx.convert'
+3422030 INFO: Analyzing hidden import 'torch.quantization.fx.fuse'
+3422061 INFO: Analyzing hidden import 'torch.quantization.fx.fusion_patterns'
+3422083 INFO: Analyzing hidden import 'torch.quantization.fx.graph_module'
+3422099 INFO: Analyzing hidden import 'torch.quantization.fx.match_utils'
+3422130 INFO: Analyzing hidden import 'torch.quantization.fx.pattern_utils'
+3422161 INFO: Analyzing hidden import 'torch.quantization.fx.prepare'
+3422184 INFO: Analyzing hidden import 'torch.quantization.fx.quantization_patterns'
+3422215 INFO: Analyzing hidden import 'torch.quantization.fx.quantization_types'
+3422246 INFO: Analyzing hidden import 'torch.quantization.fx.utils'
+3422268 INFO: Analyzing hidden import 'torch.quantization.quantize_fx'
+3422300 INFO: Analyzing hidden import 'torch.quantization.utils'
+3422315 INFO: Analyzing hidden import 'torch.testing._internal.autocast_test_lists'
+3422446 INFO: Analyzing hidden import 'torch.testing._internal.autograd_function_db'
+3422552 INFO: Analyzing hidden import 'torch.testing._internal.check_kernel_launches'
+3422584 INFO: Analyzing hidden import 'torch.testing._internal.codegen'
+3422600 INFO: Analyzing hidden import 'torch.testing._internal.common_dist_composable'
+3422647 INFO: Analyzing hidden import 'torch.testing._internal.common_distributed'
+3423010 INFO: Analyzing hidden import 'torch.testing._internal.common_fsdp'
+3423211 INFO: Analyzing hidden import 'torch.testing._internal.common_jit'
+3423272 INFO: Analyzing hidden import 'torch.testing._internal.common_mkldnn'
+3423311 INFO: Analyzing hidden import 'torch.testing._internal.common_modules'
+3424895 INFO: Analyzing hidden import 'torch.testing._internal.common_mps'
+3424967 INFO: Analyzing hidden import 'torch.testing._internal.common_ops_unbacked'
+3425038 INFO: Analyzing hidden import 'torch.testing._internal.common_optimizers'
+3425240 INFO: Analyzing hidden import 'torch.testing._internal.common_profiler'
+3425284 INFO: Analyzing hidden import 'torch.testing._internal.common_pruning'
+3425369 INFO: Analyzing hidden import 'torch.testing._internal.common_quantization'
+3425885 INFO: Analyzing hidden import 'torch.testing._internal.common_subclass'
+3425959 INFO: Analyzing hidden import 'torch.testing._internal.custom_op_db'
+3426079 INFO: Analyzing hidden import 'torch.testing._internal.custom_tensor'
+3426132 INFO: Analyzing hidden import 'torch.testing._internal.data'
+3426142 INFO: Analyzing hidden import 'torch.testing._internal.data.network1'
+3426162 INFO: Analyzing hidden import 'torch.testing._internal.data.network2'
+3426183 INFO: Analyzing hidden import 'torch.testing._internal.dist_utils'
+3426244 INFO: Analyzing hidden import 'torch.testing._internal.distributed._shard'
+3426264 INFO: Analyzing hidden import 'torch.testing._internal.distributed._shard.test_common'
+3426294 INFO: Analyzing hidden import 'torch.testing._internal.distributed._tensor'
+3426294 INFO: Analyzing hidden import 'torch.testing._internal.distributed._tensor.common_dtensor'
+3426518 INFO: Analyzing hidden import 'torch.testing._internal.distributed.checkpoint_utils'
+3426583 INFO: Analyzing hidden import 'torch.testing._internal.distributed.common_state_dict'
+3426636 INFO: Analyzing hidden import 'torch.testing._internal.distributed.ddp_under_dist_autograd_test'
+3426776 INFO: Analyzing hidden import 'torch.testing._internal.distributed.distributed_test'
+3428524 INFO: Analyzing hidden import 'torch.testing._internal.distributed.distributed_utils'
+3428583 INFO: Analyzing hidden import 'torch.testing._internal.distributed.nn'
+3428583 INFO: Analyzing hidden import 'torch.testing._internal.distributed.nn.api'
+3428583 INFO: Analyzing hidden import 'torch.testing._internal.distributed.nn.api.remote_module_test'
+3428699 INFO: Analyzing hidden import 'torch.testing._internal.distributed.rpc.dist_autograd_test'
+3429054 INFO: Analyzing hidden import 'torch.testing._internal.distributed.rpc.dist_optimizer_test'
+3429116 INFO: Analyzing hidden import 'torch.testing._internal.distributed.rpc.examples'
+3429116 INFO: Analyzing hidden import 'torch.testing._internal.distributed.rpc.examples.parameter_server_test'
+3429170 INFO: Analyzing hidden import 'torch.testing._internal.distributed.rpc.examples.reinforcement_learning_rpc_test'
+3429232 INFO: Analyzing hidden import 'torch.testing._internal.distributed.rpc.faulty_agent_rpc_test'
+3429317 INFO: Analyzing hidden import 'torch.testing._internal.distributed.rpc.faulty_rpc_agent_test_fixture'
+3429332 INFO: Analyzing hidden import 'torch.testing._internal.distributed.rpc.jit'
+3429348 INFO: Analyzing hidden import 'torch.testing._internal.distributed.rpc.jit.dist_autograd_test'
+3429386 INFO: Analyzing hidden import 'torch.testing._internal.distributed.rpc.jit.rpc_test'
+3429576 INFO: Analyzing hidden import 'torch.testing._internal.distributed.rpc.jit.rpc_test_faulty'
+3429638 INFO: Analyzing hidden import 'torch.testing._internal.distributed.rpc.rpc_test'
+3430432 INFO: Analyzing hidden import 'torch.testing._internal.distributed.rpc.tensorpipe_rpc_agent_test_fixture'
+3430481 INFO: Analyzing hidden import 'torch.testing._internal.distributed.rpc_utils'
+3430549 INFO: Analyzing hidden import 'torch.testing._internal.dynamo_pytree_test_utils'
+3430596 INFO: Analyzing hidden import 'torch.testing._internal.fake_config_module'
+3430659 INFO: Analyzing hidden import 'torch.testing._internal.fake_config_module2'
+3430681 INFO: Analyzing hidden import 'torch.testing._internal.fake_config_module3'
+3430728 INFO: Analyzing hidden import 'torch.testing._internal.fake_config_module_with_implications'
+3430743 INFO: Analyzing hidden import 'torch.testing._internal.generated'
+3430759 INFO: Analyzing hidden import 'torch.testing._internal.generated.annotated_fn_args'
+3432347 INFO: Analyzing hidden import 'torch.testing._internal.hop_db'
+3432444 INFO: Analyzing hidden import 'torch.testing._internal.hypothesis_utils'
+3432513 INFO: Analyzing hidden import 'torch.testing._internal.inductor_utils'
+3432597 INFO: Analyzing hidden import 'torch.testing._internal.jit_metaprogramming_utils'
+3432767 INFO: Analyzing hidden import 'torch.testing._internal.jit_utils'
+3432914 INFO: Analyzing hidden import 'torch.testing._internal.logging_utils'
+3432967 INFO: Analyzing hidden import 'torch.testing._internal.py312_intrinsics'
+3432999 INFO: Analyzing hidden import 'torch.testing._internal.quantization_torch_package_models'
+3433046 INFO: Analyzing hidden import 'torch.testing._internal.static_module'
+3433068 INFO: Analyzing hidden import 'torch.testing._internal.subclasses'
+3433130 INFO: Analyzing hidden import 'torch.testing._internal.test_module'
+3433146 INFO: Analyzing hidden import 'torch.testing._internal.test_module.future_div'
+3433161 INFO: Analyzing hidden import 'torch.testing._internal.test_module.no_future_div'
+3433184 INFO: Analyzing hidden import 'torch.testing._internal.torchbind_impls'
+3433246 INFO: Analyzing hidden import 'torch.testing._internal.triton_utils'
+3433369 INFO: Analyzing hidden import 'torch.utils._get_clean_triton'
+3433416 INFO: Analyzing hidden import 'torch.utils._strobelight'
+3433416 INFO: Analyzing hidden import 'torch.utils._strobelight.cli_function_profiler'
+3433500 INFO: Analyzing hidden import 'torch.utils._zip'
+3433531 INFO: Analyzing hidden import 'torch.utils.benchmark'
+3434070 INFO: Analyzing hidden import 'torch.utils.benchmark.examples'
+3434086 INFO: Analyzing hidden import 'torch.utils.benchmark.examples.compare'
+3434136 INFO: Analyzing hidden import 'torch.utils.benchmark.examples.fuzzer'
+3434170 INFO: Analyzing hidden import 'torch.utils.benchmark.examples.op_benchmark'
+3434286 INFO: Analyzing hidden import 'torch.utils.benchmark.examples.simple_timeit'
+3434302 INFO: Analyzing hidden import 'torch.utils.benchmark.examples.spectral_ops_fuzz_test'
+3434386 INFO: Analyzing hidden import 'torch.utils.benchmark.op_fuzzers.sparse_binary'
+3434418 INFO: Analyzing hidden import 'torch.utils.benchmark.op_fuzzers.sparse_unary'
+3434449 INFO: Analyzing hidden import 'torch.utils.benchmark.utils.compile'
+3434487 INFO: Analyzing hidden import 'torch.utils.bundled_inputs'
+3434571 INFO: Analyzing hidden import 'torch.utils.data.backward_compatibility'
+3434588 INFO: Analyzing hidden import 'torch.utils.data.datapipes.gen_pyi'
+3436390 INFO: Analyzing hidden import 'torch.utils.data.datapipes.utils.snapshot'
+3436437 INFO: Analyzing hidden import 'torch.utils.debug_log'
+3436475 INFO: Analyzing hidden import 'torch.utils.file_baton'
+3436506 INFO: Analyzing hidden import 'torch.utils.hipify.constants'
+3436522 INFO: Analyzing hidden import 'torch.utils.jit'
+3436537 INFO: Analyzing hidden import 'torch.utils.jit.log_extract'
+3436575 INFO: Analyzing hidden import 'torch.utils.mobile_optimizer'
+3436622 INFO: Analyzing hidden import 'torch.utils.model_dump'
+3436738 INFO: Analyzing hidden import 'torch.utils.model_dump.__main__'
+3436776 INFO: Analyzing hidden import 'torch.utils.viz'
+3436776 INFO: Analyzing hidden import 'torch.utils.viz._cycles'
+3436854 INFO: Analyzing hidden import 'torch.xpu._gpu_trace'
+3436892 INFO: Analyzing hidden import 'torchaudio.lib'
+3436892 INFO: Analyzing hidden import 'torchaudio.lib._torchaudio'
+3436892 INFO: Analyzing hidden import 'torchaudio.lib.libtorchaudio'
+3436892 INFO: Analyzing hidden import 'torchaudio.models.decoder'
+3437070 INFO: Analyzing hidden import 'whisper.__main__'
+3437092 INFO: Analyzing hidden import 'whisper.normalizers'
+3437271 INFO: Analyzing hidden import 'yt_dlp.__main__'
+3437293 INFO: Analyzing hidden import 'yt_dlp.__pyinstaller'
+3437309 INFO: Analyzing hidden import 'yt_dlp.__pyinstaller.hook-yt_dlp'
+3437767 INFO: Processing standard module hook 'hook-win32ctypes.core.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+3444200 INFO: Analyzing hidden import 'yt_dlp.compat._deprecated'
+3444235 INFO: Analyzing hidden import 'yt_dlp.compat._legacy'
+3444402 INFO: Analyzing hidden import 'yt_dlp.utils._deprecated'
+3444455 INFO: Analyzing hidden import 'yt_dlp.utils._legacy'
+3444556 INFO: Processing module hooks (post-graph stage)...
+3447980 WARNING: Hidden import "_format__mypyc" not found!
+3447980 WARNING: Hidden import "ascii__mypyc" not found!
+3447980 WARNING: Hidden import "confusion__mypyc" not found!
+3447996 WARNING: Hidden import "escape__mypyc" not found!
+3447996 WARNING: Hidden import "language__mypyc" not found!
+3447996 WARNING: Hidden import "magic__mypyc" not found!
+3447996 WARNING: Hidden import "markup__mypyc" not found!
+3447996 WARNING: Hidden import "orchestrator__mypyc" not found!
+3447996 WARNING: Hidden import "postprocess__mypyc" not found!
+3447996 WARNING: Hidden import "statistical__mypyc" not found!
+3447996 WARNING: Hidden import "structural__mypyc" not found!
+3448011 WARNING: Hidden import "utf1632__mypyc" not found!
+3448011 WARNING: Hidden import "utf8__mypyc" not found!
+3448011 WARNING: Hidden import "validity__mypyc" not found!
+3454985 WARNING: Hidden import "pycparser.lextab" not found!
+3455000 WARNING: Hidden import "pycparser.yacctab" not found!
+3460014 INFO: Processing standard module hook 'hook-matplotlib.backends.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+3460030 INFO: Matplotlib backend selection method: automatic discovery of used backends
+3460371 INFO: Discovered Matplotlib backend(s) via `matplotlib.use()` call in module 'sympy.testing.runtests': ['Agg', 'Agg']
+3460440 INFO: Discovered Matplotlib backend(s) via `matplotlib.use()` call in module 'gradio.utils': ['agg']
+3460487 INFO: Discovered Matplotlib backend(s) via `matplotlib.use()` call in module 'modelscope.models.cv.image_color_enhance.deeplpf.deeplpfnet': ['agg']
+3460534 INFO: Discovered Matplotlib backend(s) via `matplotlib.use()` call in module 'modelscope.pipelines.cv.body_3d_keypoints_pipeline': ['Agg']
+3460641 INFO: Discovered Matplotlib backend(s) via `matplotlib.use()` call in module 'pyannote.metrics.plot.binary_classification': ['Agg']
+3460672 INFO: The following Matplotlib backends were discovered by scanning for `matplotlib.use()` calls: ['Agg', 'agg']. If your backend of choice is not in this list, either add a `matplotlib.use()` call to your code, or configure the backend collection via hook options (see: https://pyinstaller.org/en/stable/hooks-config.html#matplotlib-hooks).
+3465401 INFO: Selected matplotlib backends: ['Agg', 'agg']
+3465401 INFO: Extra dists for selected matplotlib backends: []
+3468939 INFO: Processing standard module hook 'hook-PIL.SpiderImagePlugin.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+3484718 WARNING: Hidden import "scipy.special._cdflib" not found!
+3487125 INFO: Processing standard module hook 'hook-sqlalchemy.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+3491383 WARNING: Hidden import "pysqlite2" not found!
+3491383 WARNING: Hidden import "MySQLdb" not found!
+3492437 INFO: Processing standard module hook 'hook-tzdata.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+3496321 INFO: Performing binary vs. data reclassification (20492 entries)
+3916926 INFO: Looking for ctypes DLLs
+3918321 WARNING: Library nvcuda.dll required via ctypes not found
+3918940 WARNING: Ignoring /usr/lib64/libgomp.so.1 imported from C:\Users\zing zing\Desktop\MediaStudio\.venv311\Lib\site-packages\torch\_inductor\codecache.py - only basenames are supported with ctypes imports!
+3927876 INFO: Analyzing run-time hooks ...
+3928146 INFO: Including run-time hook 'pyi_rth_inspect.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks'
+3928214 INFO: Including run-time hook 'pyi_rth_pkgutil.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks'
+3928267 INFO: Including run-time hook 'pyi_rth_cryptography_openssl.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\rthooks'
+3928314 INFO: Including run-time hook 'pyi_rth_setuptools.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks'
+3928345 INFO: Including run-time hook 'pyi_rth_multiprocessing.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks'
+3928383 INFO: Including run-time hook 'pyi_rth_mplconfig.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks'
+3928414 INFO: Processing pre-find-module-path hook 'hook-_pyi_rth_utils.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks\\pre_find_module_path'
+3928515 INFO: Processing standard module hook 'hook-_pyi_rth_utils.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks'
+3928631 INFO: Including run-time hook 'pyi_rth_pyside6.py' from 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks'
+3932359 INFO: Creating base_library.zip...
+3932521 INFO: Looking for dynamic libraries
+C:\Users\zing zing\Desktop\MediaStudio\.venv311\Lib\site-packages\PyInstaller\building\build_main.py:227: DeprecationWarning: `torch.distributed._sharding_spec` will be deprecated, use `torch.distributed._shard.sharding_spec` instead
+  __import__(package)
+C:\Users\zing zing\Desktop\MediaStudio\.venv311\Lib\site-packages\PyInstaller\building\build_main.py:227: DeprecationWarning: `torch.distributed._sharded_tensor` will be deprecated, use `torch.distributed._shard.sharded_tensor` instead
+  __import__(package)
+C:\Users\zing zing\Desktop\MediaStudio\.venv311\Lib\site-packages\PyInstaller\building\build_main.py:227: DeprecationWarning: `torch.distributed._shard.checkpoint` will be deprecated, use `torch.distributed.checkpoint` instead
+  __import__(package)
+381701 INFO: setup plugin alembic.autogenerate.schemas
+381701 INFO: setup plugin alembic.autogenerate.tables
+381701 INFO: setup plugin alembic.autogenerate.types
+381701 INFO: setup plugin alembic.autogenerate.constraints
+381701 INFO: setup plugin alembic.autogenerate.defaults
+381701 INFO: setup plugin alembic.autogenerate.comments
+381701 INFO: setup plugin alembic.ext.checkconstraint_byname
+C:\Users\zing zing\Desktop\MediaStudio\.venv311\Lib\site-packages\PyInstaller\building\build_main.py:227: PendingDeprecationWarning: Please use `import python_multipart` instead.
+  __import__(package)
+470529 INFO: PyTorch version 2.15.0 available.
+C:\Users\zing zing\Desktop\MediaStudio\.venv311\Lib\site-packages\spaces\zero\config.py:33: UserWarning: Error while reading infos from Nvidia driver FS
+  warnings.warn("Error while reading infos from Nvidia driver FS")
+504875 INFO: Applied quirks (see `speechbrain.utils.quirks`): [allow_tf32, disable_jit_profiling]
+504875 INFO: Excluded quirks specified by the `SB_DISABLE_QUIRKS` environment (comma-separated list): []
+C:\Users\zing zing\Desktop\MediaStudio\.venv311\Lib\site-packages\torch\jit\_script.py:1491: FutureWarning: `torch.jit.script` is deprecated. Please switch to `torch.compile` or `torch.export`.
+  warnings.warn(
+C:\Users\zing zing\Desktop\MediaStudio\.venv311\Lib\site-packages\_distutils_hack\__init__.py:30: UserWarning: Setuptools is replacing distutils. Support for replacing an already imported distutils is deprecated. In the future, this condition will fail. Register concerns at https://github.com/pypa/setuptools/issues/new?template=distutils-deprecation.yml
+  warnings.warn(
+574257 WARNING: xFormers not available
+574442 WARNING: xFormers not available
+4661173 WARNING: Timed out while waiting for the child process to exit!
+4661173 INFO: Extra DLL search directories (AddDllDirectory): ['C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\shiboken6', 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\pandas.libs', 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\numpy.libs', 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\pyarrow.libs', 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\scipy.libs', 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\llvmlite.libs', 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\torch\\lib', 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\sentencepiece.libs', 'C:\\Users\\zing zing\\AppData\\Local\\Microsoft\\WinGet\\Packages\\Gyan.FFmpeg_Microsoft.Winget.Source_8wekyb3d8bbwe\\ffmpeg-9.0.2-full_build\\bin', 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\cv2\\../../x64/vc17/bin', 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\shapely.libs', 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\av.libs', 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\ctranslate2', 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\rapidfuzz.libs']
+4661173 INFO: Extra DLL search directories (PATH): ['C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\cv2\\../../x64/vc17/bin', 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PySide6']
+4742784 WARNING: Library not found: could not resolve 'fbclient.dll', dependency of 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PySide6\\plugins\\sqldrivers\\qsqlibase.dll'.
+4742796 WARNING: Library not found: could not resolve 'MIMAPI64.dll', dependency of 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PySide6\\plugins\\sqldrivers\\qsqlmimer.dll'.
+4742796 WARNING: Library not found: could not resolve 'OCI.dll', dependency of 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PySide6\\plugins\\sqldrivers\\qsqloci.dll'.
+4742806 WARNING: Library not found: could not resolve 'LIBPQ.dll', dependency of 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\PySide6\\plugins\\sqldrivers\\qsqlpsql.dll'.
+4743881 WARNING: Library not found: could not resolve 'tbb12.dll', dependency of 'C:\\Users\\zing zing\\Desktop\\MediaStudio\\.venv311\\Lib\\site-packages\\numba\\np\\ufunc\\tbbpool.cp311-win_amd64.pyd'.
+4757394 INFO: Warnings written to C:\Users\zing zing\Desktop\MediaStudio\build\MediaStudio\warn-MediaStudio.txt
+4768350 INFO: Graph cross-reference written to C:\Users\zing zing\Desktop\MediaStudio\build\MediaStudio\xref-MediaStudio.html
+4777359 INFO: checking PYZ
+4777359 INFO: Building PYZ because PYZ-00.toc is non existent
+4777359 INFO: Building PYZ (ZlibArchive) C:\Users\zing zing\Desktop\MediaStudio\build\MediaStudio\PYZ-00.pyz
+4839494 INFO: Building PYZ (ZlibArchive) C:\Users\zing zing\Desktop\MediaStudio\build\MediaStudio\PYZ-00.pyz completed successfully.
+4845165 INFO: checking PKG
+4845165 INFO: Building PKG because PKG-00.toc is non existent
+4845165 INFO: Building PKG (CArchive) MediaStudio.pkg
+4846283 INFO: Building PKG (CArchive) MediaStudio.pkg completed successfully.
+4846361 INFO: Bootloader C:\Users\zing zing\Desktop\MediaStudio\.venv311\Lib\site-packages\PyInstaller\bootloader\Windows-64bit-intel\runw.exe
+4846361 INFO: checking EXE
+4846361 INFO: Building EXE because EXE-00.toc is non existent
+4846361 INFO: Building EXE from EXE-00.toc
+4846385 INFO: Copying bootloader EXE to C:\Users\zing zing\Desktop\MediaStudio\build\MediaStudio\MediaStudio.exe
+4849700 INFO: Copying icon to EXE
+4849930 INFO: Copying 0 resources to EXE
+4849930 INFO: Embedding manifest in EXE
+4850064 INFO: Appending PKG archive to EXE
+4850824 INFO: Fixing EXE headers
+4856100 INFO: Building EXE from EXE-00.toc completed successfully.
+4858095 INFO: checking COLLECT
+4858095 INFO: Building COLLECT because COLLECT-00.toc is non existent
+4858141 INFO: Building COLLECT COLLECT-00.toc
+6345048 INFO: Building COLLECT COLLECT-00.toc completed successfully.
+6351002 INFO: Build complete! The results are available in: C:\Users\zing zing\Desktop\MediaStudio\dist
+Adding imports: ['yt_dlp.compat._legacy', 'yt_dlp.compat._deprecated', 'yt_dlp.utils._legacy', 'yt_dlp.utils._deprecated', 'Crypto', 'websockets', 'websockets.__main__', 'websockets.asyncio', 'websockets.asyncio.client', 'websockets.asyncio.connection', 'websockets.asyncio.messages', 'websockets.asyncio.router', 'websockets.asyncio.server', 'websockets.auth', 'websockets.cli', 'websockets.client', 'websockets.connection', 'websockets.datastructures', 'websockets.exceptions', 'websockets.extensions', 'websockets.extensions.base', 'websockets.extensions.permessage_deflate', 'websockets.frames', 'websockets.headers', 'websockets.http11', 'websockets.imports', 'websockets.legacy', 'websockets.legacy.auth', 'websockets.legacy.client', 'websockets.legacy.exceptions', 'websockets.legacy.framing', 'websockets.legacy.handshake', 'websockets.legacy.http', 'websockets.legacy.protocol', 'websockets.legacy.server', 'websockets.protocol', 'websockets.proxy', 'websockets.server', 'websockets.speedups', 'websockets.streams', 'websockets.sync', 'websockets.sync.client', 'websockets.sync.connection', 'websockets.sync.messages', 'websockets.sync.router', 'websockets.sync.server', 'websockets.sync.utils', 'websockets.trio', 'websockets.trio.client', 'websockets.trio.connection', 'websockets.trio.messages', 'websockets.trio.router', 'websockets.trio.server', 'websockets.trio.utils', 'websockets.typing', 'websockets.uri', 'websockets.utils', 'websockets.version', 'requests', 'requests.__version__', 'requests._internal_utils', 'requests._types', 'requests.adapters', 'requests.api', 'requests.auth', 'requests.certs', 'requests.compat', 'requests.cookies', 'requests.exceptions', 'requests.help', 'requests.hooks', 'requests.models', 'requests.packages', 'requests.sessions', 'requests.status_codes', 'requests.structures', 'requests.utils', 'urllib3', 'urllib3._base_connection', 'urllib3._collections', 'urllib3._request_methods', 'urllib3._version', 'urllib3.connection', 'urllib3.connectionpool', 'urllib3.contrib', 'urllib3.contrib.pyopenssl', 'urllib3.contrib.socks', 'urllib3.exceptions', 'urllib3.fields', 'urllib3.filepost', 'urllib3.http2', 'urllib3.http2.connection', 'urllib3.http2.probe', 'urllib3.poolmanager', 'urllib3.response', 'urllib3.util', 'urllib3.util.connection', 'urllib3.util.proxy', 'urllib3.util.request', 'urllib3.util.response', 'urllib3.util.retry', 'urllib3.util.ssl_', 'urllib3.util.ssl_match_hostname', 'urllib3.util.ssltransport', 'urllib3.util.timeout', 'urllib3.util.url', 'urllib3.util.util', 'urllib3.util.wait', 'mutagen', 'brotli', 'certifi', 'secretstorage', 'curl_cffi']
+NOTE: imported by the code but not installed in this venv (skipped): easyocr, mediapipe, rembg
+NOTE: excluded from the build: paddle, paddleocr, paddlex, tensorflow, tensorboard, easyocr, tkinter, pytest
+PyInstaller ...
+DONE -> C:\Users\zing zing\Desktop\MediaStudio\dist\MediaStudio

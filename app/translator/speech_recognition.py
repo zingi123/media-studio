@@ -14,6 +14,7 @@ Design points:
   * models load on demand through the model manager (one heavy model at a time, RAM check, unloadable).
   * start/end times are those of the audio; text is never retimed.
 """
+import re
 import time
 from pathlib import Path
 
@@ -70,10 +71,56 @@ def _pref():
 
 # ------------------------------------------------------------------ unified engine
 class Seg:
-    __slots__ = ("start", "end", "text", "words")
+    __slots__ = ("start", "end", "text", "words", "nsp", "lp", "cr")
 
-    def __init__(self, start, end, text, words):
+    def __init__(self, start, end, text, words, nsp=0.0, lp=0.0, cr=0.0):
         self.start, self.end, self.text, self.words = float(start), float(end), text, words   # words: [(text, start, end)]
+        self.nsp, self.lp, self.cr = float(nsp or 0.0), float(lp or 0.0), float(cr or 0.0)    # no_speech_prob, avg_logprob, compression_ratio (0 = unknown)
+
+
+# ------------------------------------------------------------------ hallucination / music filter + hints
+_JUNK = ("thanks for watching", "thank you for watching", "subscribe", "like and subscribe", "amara.org", "subtitles by",
+         "字幕", "请不吝", "點贊", "点赞", "订阅", "謝謝觀看", "谢谢观看", "ご視聴ありがとう", "チャンネル登録", "시청해 주셔서", "시청해주셔서", "구독")
+
+
+def filter_segments(segs, say=None):
+    """Drop what Whisper invents on music / silence: no-speech + low confidence, runaway repetition (compression ratio), known stock phrases
+    ('thanks for watching', '字幕...'), and the 3rd+ identical line in a row. Real speech is kept: a rule needs BOTH signals where it can."""
+    out, drop, last, rep = [], 0, None, 0
+    for g in segs:
+        t = (g.text or "").strip()
+        low = t.lower()
+        bad = (g.nsp > 0.6 and g.lp < -1.0) or g.cr > 2.4 or any(j in low for j in _JUNK)
+        rep = rep + 1 if t == last else 1
+        last = t
+        if bad or rep >= 3 or not t:
+            drop += 1
+            continue
+        out.append(g)
+    if drop and say:
+        say(f"ASR filter: {drop} line(s) removed (music / silence / repeated or stock phrases Whisper invents).")
+    return out
+
+
+def hint_text(*parts, limit=200):
+    """Names / terms for Whisper's initial_prompt (spelling of character names and places). Whisper reads at most ~224 tokens - keep it short."""
+    seen, out = set(), []
+    for p in parts:
+        for w in re.split(r"[,;\n、，；]+", p or ""):
+            w = w.strip()
+            if w and w not in seen:
+                seen.add(w)
+                out.append(w)
+    return ("、".join(out))[:limit]
+
+
+def asr_source(video):
+    """'vocals' when Demucs stems exist (music is already removed = far fewer false words), else 'mix'."""
+    try:
+        from ..studio import audio as _AU
+        return "vocals" if _AU.have_stems(video) else "mix"
+    except Exception:  # noqa
+        return "mix"
 
 
 def split_points(audio, sr=SR, piece_s=PIECE_S, search_s=4.0):
@@ -117,7 +164,7 @@ def load_model(backend, model, device, warn=None):
     return MM.get(_model_key(backend, model, device), loader, est_mb=mb)
 
 
-def run_asr(wav, model="base", language=None, device="cpu", backend=None, progress=None, cancel=None, warn=None):
+def run_asr(wav, model="base", language=None, device="cpu", backend=None, progress=None, cancel=None, warn=None, initial_prompt=""):
     """-> (segments [Seg], language_code, duration_seconds). Raises Cancelled / RuntimeError with an actionable message."""
     backend = pick_backend(backend or _pref())
     from .diarization import read_wav_mono
@@ -129,13 +176,15 @@ def run_asr(wav, model="base", language=None, device="cpu", backend=None, progre
     m = load_model(backend, model, device, warn)
     segs, lang = [], language or ""
     if backend == "faster-whisper":
-        gen, info = m.transcribe(audio, language=language or None, vad_filter=True, word_timestamps=True)
+        gen, info = m.transcribe(audio, language=language or None, vad_filter=True, word_timestamps=True,
+                                  initial_prompt=initial_prompt or None, condition_on_previous_text=False)
         lang = info.language or lang
         for s in gen:
             if cancel and cancel():
                 raise Cancelled()
             ws = [((w.word or "").strip(), float(w.start), float(w.end)) for w in (s.words or [])]
-            segs.append(Seg(s.start, s.end, (s.text or "").strip(), [w for w in ws if w[0]]))
+            segs.append(Seg(s.start, s.end, (s.text or "").strip(), [w for w in ws if w[0]],
+                            getattr(s, "no_speech_prob", 0.0), getattr(s, "avg_logprob", 0.0), getattr(s, "compression_ratio", 0.0)))
             if progress and dur:
                 progress(min(99, int(s.end * 100 / dur)))
     else:
@@ -143,16 +192,19 @@ def run_asr(wav, model="base", language=None, device="cpu", backend=None, progre
             if cancel and cancel():
                 raise Cancelled()
             off = a / sr
-            res = m.transcribe(audio[a:b], language=lang or None, word_timestamps=True, fp16=(device == "cuda"), verbose=None)
+            res = m.transcribe(audio[a:b], language=lang or None, word_timestamps=True, fp16=(device == "cuda"), verbose=None,
+                           initial_prompt=initial_prompt or None, condition_on_previous_text=False)
             lang = lang or res.get("language", "") or ""
             for s in res.get("segments", []):
                 ws = [((w.get("word") or "").strip(), float(w["start"]) + off, float(w["end"]) + off) for w in s.get("words", []) or []]
-                segs.append(Seg(float(s["start"]) + off, float(s["end"]) + off, (s.get("text") or "").strip(), [w for w in ws if w[0]]))
+                segs.append(Seg(float(s["start"]) + off, float(s["end"]) + off, (s.get("text") or "").strip(), [w for w in ws if w[0]],
+                                s.get("no_speech_prob", 0.0), s.get("avg_logprob", 0.0), s.get("compression_ratio", 0.0)))
             if progress and dur:
                 progress(min(99, int(b * 100 / len(audio))))
     record_speed("asr", f"{backend}|{model}|{device}", dur, time.time() - t0)
     if progress:
         progress(100)
+    segs = filter_segments(segs)
     return segs, lang, dur
 
 
@@ -166,15 +218,30 @@ def estimate_asr(model, device, audio_seconds, backend=None):
 
 
 def _wav_for(video, cancel):
-    wav = Path(work_dir(Path(video).stem)) / "audio16k.wav"
+    """16 kHz mono audio for Whisper. Uses the Demucs VOCALS stem when it exists (no music -> fewer invented words), else the full mix."""
+    wd = Path(work_dir(Path(video).stem))
+    if asr_source(video) == "vocals":
+        try:
+            from ..studio import audio as _AU
+            from ..shared.ffmpeg_util import run_ffmpeg
+            out = wd / "vocals16k.wav"
+            src = _AU.stem_paths(video)["vocals"]
+            if not out.exists() or out.stat().st_mtime < Path(src).stat().st_mtime:
+                run_ffmpeg(["-y", "-i", str(src), "-vn", "-ac", "1", "-ar", "16000", "-c:a", "pcm_s16le", str(out)], cancel=cancel)
+            return out
+        except Cancelled:
+            raise
+        except Exception:  # noqa - fall back to the full mix
+            pass
+    wav = wd / "audio16k.wav"
     extract_audio(video, wav, cancel=cancel)
     return wav
 
 
 # ------------------------------------------------------------------ public API (unchanged signatures)
-def transcribe(video, model="base", language=None, device="cpu", progress=None, cancel=None):
+def transcribe(video, model="base", language=None, device="cpu", progress=None, cancel=None, initial_prompt=""):
     """ASR -> [Cue]. Downloads the model on first use (needs internet once)."""
-    segs, _, _ = run_asr(_wav_for(video, cancel), model, language, device, None, progress, cancel)
+    segs, _, _ = run_asr(_wav_for(video, cancel), model, language, device, None, progress, cancel, initial_prompt=initial_prompt)
     cues = []
     for s in segs:
         if not s.text:
@@ -196,9 +263,9 @@ def transcribe(video, model="base", language=None, device="cpu", progress=None, 
     return out
 
 
-def transcribe_words(video, model="base", language=None, device="cpu", progress=None, cancel=None):
+def transcribe_words(video, model="base", language=None, device="cpu", progress=None, cancel=None, initial_prompt=""):
     """(Smart Script) every WORD with its real start/end time -> (words: [script_builder.Word], language_code)"""
     from .script_builder import Word
-    segs, lang, _ = run_asr(_wav_for(video, cancel), model, language, device, None, progress, cancel)
+    segs, lang, _ = run_asr(_wav_for(video, cancel), model, language, device, None, progress, cancel, initial_prompt=initial_prompt)
     words = [Word(t, a, b) for s in segs for (t, a, b) in s.words if b > a]
     return words, (lang or language or "")

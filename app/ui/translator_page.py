@@ -18,6 +18,7 @@ from ..translator.khmer_tts import synthesize, VOICES, GENDER
 from ..translator.speech_recognition import MODELS
 from ..translator.smart_script import scan_smart_script   # NEW: speaker-turn script with pauses + emotion tags
 from ..translator import script_builder as SB
+from ..translator import prosody_match as PM   # NEW: measured performance matching (pitch / loudness / pace per line)
 from ..translator import story_info as ST   # NEW: title / summary / character names header
 from ..translator.scan import scan_script, METHODS, LANGS   # voice / on-screen text -> script (Auto fallback)
 from ..translator.translator_engine import translate_cues, ENGINES
@@ -33,13 +34,15 @@ from .system_status_dialog import SystemStatusDialog
 from .ocr_review_dialog import OcrReviewDialog
 from .speaker_manager_dialog import SpeakerManagerDialog
 from ..translator.speakers import SpeakerBook, SpeakerError
-from ..translator.separation import separate
 from ..translator import video_overlay as VO
 from ..translator.bg_remove import remove_background
 from .workers import Worker
 from .translator_widgets import card, Collapsible, CueTimeline, SectionBox, TransportBar
 from .accordion import AccordionGroup
 from .studio_integration import StudioMixin
+from .auto_dub import AutoDubMixin
+from .batch_queue import BatchMixin
+from .hook_finder import HookMixin
 from ..studio import audio as AU
 from ..studio import dialogue as DLG
 from ..studio.model import Mixer as _Mixer
@@ -86,7 +89,7 @@ class VoiceDelegate(QStyledItemDelegate):   # Voice Type cell = dropdown (Male /
         model.setData(index, ed.currentText())
 
 
-class TranslatorPage(StudioMixin, QWidget):
+class TranslatorPage(StudioMixin, AutoDubMixin, BatchMixin, HookMixin, QWidget):
     def __init__(self, ctx):
         super().__init__()
         self.ctx = ctx
@@ -247,6 +250,9 @@ class TranslatorPage(StudioMixin, QWidget):
 
     def stop_all(self):  # បញ្ឈប់ដំណើរការទាំងអស់
         self._queue = []
+        if getattr(self, "_batch", None) is not None:
+            self.log.appendPlainText("■ Batch stopped.")
+        self._batch = None
         self._st_stop_listen()
         if self.player:
             self.player.stop()
@@ -429,11 +435,12 @@ class TranslatorPage(StudioMixin, QWidget):
         self._run(scan_script, self.video, method=self.method.currentData(), lang=self._lang_code(),
                   model=self.model.currentText(), device=self.device.currentText(), done=done, alert=True)
 
-    def smart_scan(self):  # A2. voice → script: NEW line only when the speaker/voice changes; pauses from real silence; emotion tags
+    def smart_scan(self, then=None):  # then = callable run after the scan (Auto Dub): no Save dialog, no 'Replace?' question
+        # A2. voice → script: NEW line only when the speaker/voice changes; pauses from real silence; emotion tags
         self.tog["Process"].setChecked(True)
         if not self._need_video():
             return
-        if self.cues and QMessageBox.question(self, "Smart Script", "Replace the current lines with the Smart Script?\n"
+        if self.cues and not callable(then) and QMessageBox.question(self, "Smart Script", "Replace the current lines with the Smart Script?\n"
                                               "(Cancel keeps your current lines untouched.)") != QMessageBox.Yes:
             return
         st = self.ctx.settings
@@ -451,13 +458,28 @@ class TranslatorPage(StudioMixin, QWidget):
                 self.log.appendPlainText(f"  Story: {self.story.get('title') or '-'} | {len(self.story['characters'])} character(s)")
             for k, c in enumerate(cues[:5]):   # quick look at what was found (full details are in the saved file)
                 self.log.appendPlainText(f"  #{k + 1} {c.speaker} | {c.emotion or 'normal'}" + (f" | {c.action}" if c.action else ""))
-            self.export_smart_script()
+            if callable(then):
+                then()
+            else:
+                self.export_smart_script()
         self._run(scan_smart_script, self.video, lang=self._lang_code(), model=self.model.currentText(),
                   device=self.device.currentText(), hf_token=st.get("hf_token"), min_conf=st.get("voice_min_conf"),
                   saved_presets=load_saved(self.ctx.settings), emo_min_pct=self.emo_min.value(),
                   event_min_pct=self.evt_min.value(), use_motion=self.motion_on.isChecked(), use_story=self.story_on.isChecked(), ocr_fix=self.ocr_fix_on.isChecked(), break_on_silence=self.split_sil.value(), max_line_secs=0.0,   # no length cap: a line ends only when the speaker / voice changes or after the silence setting
                   diar_mode=st.get("diar_mode"), diar_model=st.get("diar_model"),
-                  gemini_key=st.get("gemini_key"), gemini_model=st.get("gemini_model"), done=done, alert=True)
+                  gemini_key=st.get("gemini_key"), gemini_model=st.get("gemini_model"), done=done, alert=True,
+                  asr_hint=self._asr_hint_text(),
+                  on_fail=(self._ad_abort if callable(then) else None))
+
+    def _asr_hint_text(self):
+        """User's names + the character names of an earlier story analysis (spelling help for Whisper)."""
+        names = ""
+        try:
+            names = ", ".join(n for n in ((c.get("name") if isinstance(c, dict) else str(c)) for c in ((self.story or {}).get("characters") or []))
+                              if n and not str(n).lower().startswith("speaker"))
+        except Exception:  # noqa
+            names = ""
+        return ", ".join(x for x in (self.asr_hint.text().strip(), names) if x)
 
     def export_sub_rich(self):  # SRT / VTT with the character names (VTT also gets the story header as a NOTE)
         if not self.cues:
@@ -631,7 +653,7 @@ class TranslatorPage(StudioMixin, QWidget):
                 self.cues[r].speed, self.cues[r].audio = v, ""
             self.refresh()
 
-    def translate(self, then=None):  # then = function រត់បន្ទាប់ពីបកប្រែរួច
+    def translate(self, then=None, on_fail=None):  # then = function រត់បន្ទាប់ពីបកប្រែរួច
         if not self.cues:
             QMessageBox.information(self, "Translate", "Extract or import text first.")
             return
@@ -639,7 +661,7 @@ class TranslatorPage(StudioMixin, QWidget):
         self.log.appendPlainText("Translating in batches of 50...")
         self._run(translate_cues, self.cues, engine=self.engine.currentIndex(),
                   api_key=self.ctx.settings.get("gemini_key"), model=self.ctx.settings.get("gemini_model"),
-                  src_lang=self._lang_code(), glossary=ST.glossary_text(self.story), done=lambda c: self._tr_done(then))
+                  src_lang=self._lang_code(), glossary=ST.glossary_text(self.story), done=lambda c: self._tr_done(then), on_fail=on_fail)
 
     def _tr_done(self, then):  # បកប្រែរួច
         self.refresh(); self.log.appendPlainText("✓ Translated." + (" Generating voice..." if then else " Review and edit before generating voice."))
@@ -719,7 +741,7 @@ class TranslatorPage(StudioMixin, QWidget):
         if vt in self.voices or VC.is_clone_name(vt):   # a Selected Voice Type (cloned voice or catalog preset) → one WAV for this row
             return self._synth_selected(i, c, vt, d, speed, progress, cancel, raw=raw, tag=tag)
         use_voice = getattr(c, "voice_name", "") or VT_VOICE.get(vt, voice)       # Speaker Manager voice wins -> same voice for a character
-        sig = f"{c.translation}|{use_voice}|{speed:.2f}|{c.emotion_raw}|{c.emotion}|{tag}"   # file name changes with voice/speed/emotion (no stale cache)
+        sig = f"{c.translation}|{use_voice}|{speed:.2f}|{c.emotion_raw}|{c.emotion}|{c.prosody}|{tag}"   # file name changes with voice/speed/emotion (no stale cache)
         f = d / f"line_{i + 1:04d}_{vt[:1] or 'D'}_{hashlib.md5(sig.encode('utf-8')).hexdigest()[:8]}{tag}.mp3"
         return self._edge_line(c, f, use_voice, speed, raw=raw, progress=progress)
 
@@ -731,7 +753,14 @@ class TranslatorPage(StudioMixin, QWidget):
         """edge-tts for one line. The Emotion Raw only changes bounded speed/pitch/volume - never the voice - and the
         limitation (edge-tts Khmer has no emotion styles) is logged once per emotion instead of pretending."""
         raw = raw or ER.of_cue(c)
-        path, lim = TP.synth_edge(c.translation, out, voice, speed, raw, self._emotion_tts_on())
+        pj = PM.load(c)
+        if pj and self._emotion_tts_on():          # measured performance of the original actor beats the coarse emotion label
+            from ..translator.khmer_tts import synthesize
+            path = synthesize(c.translation, out, voice, max(0.5, min(2.0, speed * (1 + pj["rate"] / 100.0))),
+                              pitch_hz=int(pj["pitch"]), volume_pct=int(pj["vol"]))
+            lim = ""
+        else:
+            path, lim = TP.synth_edge(c.translation, out, voice, speed, raw, self._emotion_tts_on())
         seen = self.__dict__.setdefault("_lim_seen", set())
         if lim and raw.label not in seen:
             seen.add(raw.label)
@@ -748,11 +777,16 @@ class TranslatorPage(StudioMixin, QWidget):
 
     def _synth_selected(self, i, c, vt, d, speed, progress=None, cancel=None, raw=None, tag=""):
         """One row → one WAV with a Selected Voice Type. Cloned voice → VoxCPM2 (GPU); catalog voice → edge-tts + preset effects."""
-        key = hashlib.md5((c.translation + tag).encode("utf-8")).hexdigest()[:8]
+        key = hashlib.md5((c.translation + c.prosody + tag).encode("utf-8")).hexdigest()[:8]
         if VC.is_clone_name(vt):
             style = TP.clone_style(raw or ER.of_cue(c))              # from Emotion Raw ("" = plain Normal speech)
-            return VC.synthesize_clone(c.translation, d / f"line_{i + 1:04d}_clone_{key}.wav", VC.reference_path(vt), speed,
+            outp = VC.synthesize_clone(c.translation, d / f"line_{i + 1:04d}_clone_{key}.wav", VC.reference_path(vt), speed,
                                        progress, cancel, style=style)
+            pj = PM.load(c)
+            if pj and self._emotion_tts_on():      # a cloned voice has no pitch/rate parameter: only the loudness is corrected
+                import math
+                PM.apply_gain(outp, 20 * math.log10(max(0.05, 1 + pj["vol"] / 100.0)))
+            return outp
         p = self.voices[vt]
         rawf = d / f"line_{i + 1:04d}_{key}.mp3"
         self._edge_line(c, rawf, BASE[p["base"]], speed * (1 + p["speed"] / 100), raw=raw, progress=progress)
@@ -1304,7 +1338,8 @@ class TranslatorPage(StudioMixin, QWidget):
         self.preview_fx()
 
     # ---------- export ----------
-    def export(self):
+    def export(self, then=None, on_fail=None):   # then / on_fail: used by Batch Auto Dub (no popups, continue with the next video)
+        batch = getattr(self, "_batch", None) is not None
         if not self._need_video():
             return
         if not self.cues:
@@ -1374,18 +1409,23 @@ class TranslatorPage(StudioMixin, QWidget):
             return msgs
 
         if mode in (0, 1, 3, 4) and not any(c.audio and Path(c.audio).exists() for c in self.cues):
+            if batch:
+                self.log.appendPlainText("✗ no Khmer voice was generated.")
+                return on_fail("no Khmer voice was generated") if on_fail else None
             QMessageBox.information(self, "Export", "Generate the Khmer voice first (step 5).")
             return
         if mode in (0, 1, 3, 4):   # lines without a voice file would be silent in the export
             silent = [i + 1 for i, c in enumerate(self.cues) if not (c.audio and Path(c.audio).exists())]
-            if silent:
+            if silent and batch:
+                self.log.appendPlainText(f"   {len(silent)} silent line(s) - exported anyway in batch mode.")
+            elif silent:
                 eg = ", ".join(map(str, silent[:8])) + (" ..." if len(silent) > 8 else "")
                 if QMessageBox.question(self, "Silent lines", f"{len(silent)} of {len(self.cues)} line(s) have no voice and will be "
                                         f"SILENT (lines {eg}).\nExport anyway?") != QMessageBox.Yes:
                     return
         if mode in (2, 3) and sub == "burn" and not font:
             self.log.appendPlainText("Note: burn-in Khmer needs a Khmer font file set in Settings; otherwise text may show as boxes.")
-        self._run(job, done=lambda m: [self.log.appendPlainText(x) for x in m])
+        self._run(job, done=lambda m: ([self.log.appendPlainText(x) for x in m], then() if then else None), on_fail=on_fail)
 
     def _create_controls(self):
         ctx = self.ctx
@@ -1397,6 +1437,11 @@ class TranslatorPage(StudioMixin, QWidget):
         for label, code in METHODS:
             self.method.addItem(label, code)
         i = self.method.findData(ctx.settings.get("scan_method")); self.method.setCurrentIndex(max(0, i))
+        self.asr_hint = QLineEdit(); self.asr_hint.setText(str(ctx.settings.get("asr_hint") or ""))
+        self.asr_hint.setPlaceholderText("e.g. 李明, 王芳, 北京  (optional)")
+        self.asr_hint.setToolTip("Character names / places / terms as they are SPOKEN. Whisper uses them to spell names correctly.\n"
+                                 "Names found by the story analysis are added automatically on the next scan.")
+        self.asr_hint.editingFinished.connect(lambda: self._save_key("asr_hint", self.asr_hint.text().strip()))
         self.lang = QComboBox()
         for label, code in LANGS:
             self.lang.addItem(label, code)
@@ -1516,6 +1561,20 @@ class TranslatorPage(StudioMixin, QWidget):
         import_row.addWidget(import_btn)
         ml.addLayout(import_row)
         ml.addWidget(self.vmeta)
+        auto_btn = QPushButton("⚡  Auto Dub  (one click)")
+        auto_btn.setObjectName("primary"); auto_btn.setMinimumHeight(40)
+        auto_btn.setToolTip("Smart Script → Translate → Voice → Quality check → Export, using the same steps and settings as the buttons below.\n"
+                            "Steps already done are skipped, so you can stop and run it again.")
+        auto_btn.clicked.connect(lambda: self.auto_dub_clicked())
+        ml.addWidget(auto_btn)
+        batch_btn = QPushButton("⚡⚡  Batch Auto Dub  (many videos)")
+        batch_btn.setToolTip("Choose several videos; each one goes through Auto Dub in turn with no questions. A failure only skips that video.")
+        batch_btn.clicked.connect(lambda: self.batch_clicked())
+        ml.addWidget(batch_btn)
+        hook_btn = QPushButton("🎣  Hook Finder  (best 4-8 s moments)")
+        hook_btn.setToolTip("AI finds the strongest hook moments of the film; export them as MP3, video + voice, with Khmer subtitle, or as an intro in front of the film.")
+        hook_btn.clicked.connect(lambda: self.hook_clicked())
+        ml.addWidget(hook_btn)
         output_box = QWidget(); output_box.setObjectName("plain")
         og = QGridLayout(output_box); og.setContentsMargins(0, 0, 0, 0); og.setHorizontalSpacing(6); og.setVerticalSpacing(5)
         og.addWidget(QLabel("Output folder"), 0, 0, 1, 2)
@@ -1537,7 +1596,7 @@ class TranslatorPage(StudioMixin, QWidget):
         # 1 · Extract script
         self.card_extract, l = card("")
         g = QGridLayout(); g.setHorizontalSpacing(8); g.setVerticalSpacing(6)
-        for n, (lbl, wd) in enumerate((("Text source", self.method), ("Spoken language", self.lang), ("Accuracy", self.model), ("Device", self.device))):
+        for n, (lbl, wd) in enumerate((("Text source", self.method), ("Spoken language", self.lang), ("Accuracy", self.model), ("Device", self.device), ("Names (hint)", self.asr_hint))):
             g.addWidget(QLabel(lbl), n, 0); g.addWidget(wd, n, 1)
         g.setColumnStretch(1, 1)
         l.addLayout(g)

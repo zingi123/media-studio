@@ -20,6 +20,7 @@ DEFAULTS = {
     "asr_backend": "auto", "cpu_threads": 0, "processing_workers": 1,                                       # CPU-first: 1 worker = one heavy model at a time
     "ocr_engine": "auto", "ocr_fix_auto_apply": False,                                                      # OCR vs Whisper conflicts are REVIEWED unless this is on
     "diar_mode": "pyannote", "diar_model": "pyannote/speaker-diarization-community-1",                   # pyannote | fallback (energy VAD, explicit) | off (single speaker)
+    "autodub_demucs": False, "asr_hint": "",                                                                              # Auto Dub: also run Demucs (asked in the Auto Dub dialog)
     "settings_version": 4,
     "voice_min_conf": 45,
     "fx_blur_pct": 60, "fx_top": 70, "fx_h": 11, "fx_left": 5, "fx_w": 90,   # Blur: % និងតំបន់ subtitle

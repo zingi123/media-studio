@@ -12,12 +12,23 @@ NLLB_CODES = {"zh": "zho_Hans", "en": "eng_Latn", "ko": "kor_Hang", "ja": "jpn_J
               "vi": "vie_Latn", "auto": "zho_Hans"}
 
 
-def _llm_batch(provider, batch, ctx, glossary, characters, model=None):
+def make_provider(engine=0, api_key="", model=""):
+    """LLM provider for an engine index (0 Gemini, 2 Claude, 3 Ollama); None for the offline NLLB engine."""
+    if engine not in ENGINE_PROVIDER:
+        return None
+    provider = P.get_provider(ENGINE_PROVIDER[engine])
+    if engine == 0:
+        provider.key = (api_key or provider.key).strip()
+        provider.model = (model or provider.model).strip()
+    return provider
+
+
+def _llm_batch(provider, batch, ctx, glossary, characters, model=None, src_lang="auto"):
     """One provider call -> {id: khmer}. Retries once with a stricter instruction when the JSON is unusable."""
     prompt = KP.build_prompt(batch, ctx, glossary, characters)
     last = None
     for attempt in range(3):
-        txt = provider.generate(prompt, system=KP.SYSTEM, json_mode=True, model=model, temperature=0.3)
+        txt = provider.generate(prompt, system=KP.system_for(src_lang), json_mode=True, model=model, temperature=0.3)
         try:
             return KP.parse_json_array(txt)
         except (ValueError, KeyError, TypeError) as e:
@@ -60,7 +71,7 @@ def translate_cues(cues, engine=0, api_key="", model="gemini-3.8-flash", src_lan
                       **({"emotion": cues[i].emotion} if cues[i].emotion and cues[i].emotion != "normal" else {})} for i in idxs]
             ctx = [plain_text(cues[i].text) for i in range(max(0, idxs[0] - 3), idxs[0])]
             try:
-                got = _llm_batch(provider, batch, ctx, glossary, chars)
+                got = _llm_batch(provider, batch, ctx, glossary, chars, src_lang=src_lang)
             except P.ProviderError as e:
                 raise RuntimeError(f"{provider.label}: {e}") from e
             for i in idxs:

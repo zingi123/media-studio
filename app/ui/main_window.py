@@ -7,7 +7,7 @@ are intentionally not registered in the active navigation; their source files ar
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, QLabel, QPushButton,
-    QFrame, QSizePolicy, QStackedWidget,
+    QFrame, QSizePolicy, QStackedWidget, QMessageBox,
 )
 from .translator_page import TranslatorPage
 from .theme import apply_theme, T
@@ -56,9 +56,12 @@ class MainWindow(QMainWindow):
         self.hint = QLabel("AI VIDEO TRANSLATION  ·  KHMER DUBBING")
         self.hint.setObjectName("headerHint")
         h.addWidget(self.hint)
-        self.upd_btn = QPushButton("⟳  Update")
-        self.upd_btn.setToolTip("Check for a new version")
-        h.addWidget(self.upd_btn)
+
+        self.clear_cache_btn = QPushButton("🧹  Clear Cache")
+        self.clear_cache_btn.setToolTip("Delete the cache and all saved history (Demucs stems, voice files, saved scripts, download history).\n"
+                                        "Settings, API keys, cloned voices, models and exported files are kept.")
+        self.clear_cache_btn.clicked.connect(self.clear_cache)
+        h.addWidget(self.clear_cache_btn)
         outer.addWidget(header)
 
         # Left workflow rail + the existing functional Translator page.
@@ -99,19 +102,19 @@ class MainWindow(QMainWindow):
 
         self.setCentralWidget(root)
 
-        try:                                    # update alert must never block the app
-            from .update_dialog import UpdateController
-            self._upd = UpdateController(self)
-            self.upd_btn.clicked.connect(lambda: self._upd.check(silent=False))
-        except Exception:
-            self.upd_btn.hide()
-
     def show_workspace(self, index):
         self.stack.setCurrentIndex(index)
         self.tab_trans.setChecked(index == 0)
         self.tab_sum.setChecked(index == 1)
         self.setWindowTitle("MediaStudio — " + ("Translator" if index == 0 else "Khmer Movie Summary"))
         self.hint.setText("AI VIDEO TRANSLATION  ·  KHMER DUBBING" if index == 0 else "MOVIE RECAP  ·  KHMER NARRATION")
+
+    def clear_cache(self):
+        w = getattr(self.summary, "worker", None) if self.summary is not None else None
+        if w is not None and w.isRunning():
+            QMessageBox.information(self, "Clear Cache", "Khmer Movie Summary is still working. Stop it first, then clear the cache.")
+            return
+        self.trans.clear_cache_clicked()
 
     def closeEvent(self, event):
         # Stop active background work before the window closes.

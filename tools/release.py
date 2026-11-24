@@ -12,10 +12,15 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def main():
-    if len(sys.argv) < 2 or not re.fullmatch(r"\d+\.\d+\.\d+", sys.argv[1]):
-        sys.exit('Usage: python tools/release.py 1.1.0 "release notes"')
-    ver, notes = sys.argv[1], (sys.argv[2] if len(sys.argv) > 2 else "")
     vf = ROOT / "app" / "version.py"
+    arg = sys.argv[1] if len(sys.argv) > 1 else "auto"
+    if arg == "auto":                      # next patch number: 1.0.0 -> 1.0.1
+        cur = re.search(r'__version__ = "([^"]+)"', vf.read_text(encoding="utf-8")).group(1)
+        a, b, c = (int(x) for x in cur.split("."))
+        arg = f"{a}.{b}.{c + 1}"
+    if not re.fullmatch(r"\d+\.\d+\.\d+", arg):
+        sys.exit('Usage: python tools/release.py [1.1.0|auto] "release notes"')
+    ver, notes = arg, (sys.argv[2] if len(sys.argv) > 2 else "update")
     vf.write_text(re.sub(r'__version__ = "[^"]*"', f'__version__ = "{ver}"', vf.read_text(encoding="utf-8")), encoding="utf-8")
     sys.path.insert(0, str(ROOT / "tools"))
     out = ROOT / "release"
@@ -29,6 +34,7 @@ def main():
                 z.write(f, f.relative_to(ROOT).as_posix())
         z.writestr("release.json", json.dumps(meta))
     (out / "update.zip.sha256").write_text(hashlib.sha256(zp.read_bytes()).hexdigest() + "  update.zip\n")
+    (out / "VERSION.txt").write_text(ver)
     (out / "NOTES.txt").write_text(notes or f"MediaStudio {ver}", encoding="utf-8")
     print(f"OK {ver}: {zp} ({zp.stat().st_size // 1024} KB)")
 

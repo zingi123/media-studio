@@ -29,6 +29,9 @@ class Cue:
     voice_name: str = ""             # NEW: TTS voice used for this row (kept the same for a speaker by the Speaker Manager)
     audio_sig: str = ""              # STUDIO: fingerprint of the text/voice/emotion/speed the audio was generated from ("" = unknown / legacy)
     voice_dur: float = 0.0           # STUDIO: real length (s) of the generated voice clip (0 = not measured)
+    prosody: str = ""                # NEW: measured performance plan JSON {rate,pitch,vol,want_*} (prosody_match.py); "" = label-based emotion only
+    match_score: float = -1.0        # NEW: 0-100 how closely the Khmer voice follows the original performance (-1 = not checked)
+    match_note: str = ""             # NEW: why the score is what it is
 
 
 _TIME = r"((?:\d+:)?\d{1,2}:\d{2}[,.]\d{1,3})"

@@ -13,9 +13,10 @@ SolidCompression=yes
 DisableProgramGroupPage=yes
 
 [Files]
-Source: "dist\MediaStudio\*"; DestDir: "{app}"; Flags: recursesubdirs ignoreversion; Excludes: "code\*"
+; everything except code\ (code\ is owned by the in-app updater)
+Source: "dist\MediaStudio\*"; DestDir: "{app}"; Excludes: "code\*"; Flags: recursesubdirs createallsubdirs ignoreversion
 ; code\ is copied only when missing, so reinstalling never overwrites a newer updated code
-Source: "dist\MediaStudio\code\*"; DestDir: "{app}\code"; Flags: recursesubdirs onlyifdoesntexist
+Source: "dist\MediaStudio\code\*"; DestDir: "{app}\code"; Flags: recursesubdirs createallsubdirs onlyifdoesntexist
 
 [Icons]
 Name: "{autoprograms}\MediaStudio"; Filename: "{app}\MediaStudio.exe"

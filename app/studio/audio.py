@@ -200,6 +200,11 @@ PEAK_RATE = 100        # peak columns per second kept in the cache (enough for ~
 _cache = {}
 
 
+def clear_peak_cache():
+    """Forget every in-memory waveform (used by Clear Cache: the files they came from are gone)."""
+    _cache.clear()
+
+
 def _key(path):
     p = Path(path)
     try:
