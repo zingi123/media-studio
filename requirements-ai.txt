@@ -1,0 +1,9 @@
+# Optional AI features. Already-installed packages are left alone by setup_windows.bat.
+# PyTorch is deliberately NOT listed: install it yourself (CPU build: pip install torch torchaudio --index-url https://download.pytorch.org/whl/cpu)
+# and keep torch + torchaudio on the SAME version. Check with:  python verify_env.py   (and --plan if it reports a problem)
+openai-whisper                 # speech recognition (CPU/CUDA). Alternative: faster-whisper (faster on CPU) - install either one
+# faster-whisper>=1.0
+pyannote.audio==4.0.7          # speaker diarization (pyannote/speaker-diarization-community-1); declares its own torch/torchaudio requirements
+huggingface_hub                # authentication / model access
+google-genai                   # Gemini (official SDK; the built-in HTTPS client is used if absent)
+anthropic                      # Claude (official SDK; the built-in HTTPS client is used if absent)

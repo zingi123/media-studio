@@ -1,0 +1,6 @@
+# paddleocr + paddlepaddle     # optional alternative OCR engine (Settings > ocr_engine = paddle)
+pytest>=8.0
+# Voice type detection / voice cloning (optional)
+speechbrain>=1.0               # ECAPA speaker embeddings (merge SUGGESTIONS, cross-chunk linking)
+gradio_client>=1.0             # online voice clone through a Hugging Face Space
+# voxcpm                        # local voice cloning (GPU recommended) - install following its own instructions

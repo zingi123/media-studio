@@ -1,0 +1,19 @@
+# MediaStudio - CORE (the app opens with only these; every AI feature is optional - see requirements-ai.txt / -voice.txt)
+PySide6>=6.6
+numpy>=1.26
+Pillow>=10.0
+keyring>=24.0          # OS credential store (Windows Credential Manager) for API keys / tokens
+packaging>=23.0        # dependency analysis in System Status
+psutil>=5.9            # RAM detection (memory-aware model loading)
+edge-tts>=6.1          # Khmer voices (km-KH-PisethNeural / SreymomNeural) - needs internet
+imageio-ffmpeg>=0.4.9  # fallback FFmpeg binary if ffmpeg is not installed
+yt-dlp>=2024.1.1       # downloader page
+# CLONE VOICE (VoxCPM2 zero-shot) - only needed for cloning. Works on GPU OR CPU-only PCs (CPU is slower).
+# NO GPU / CPU-only PC: install the small CPU build of PyTorch instead of the CUDA one:
+#      pip install torch torchaudio --index-url https://download.pytorch.org/whl/cpu
+# Recommended: 16 GB RAM. Optional settings.json keys: "voxcpm_device" (auto|cpu|cuda), "voxcpm_steps" (fewer = faster).
+# Offline PC: copy the downloaded model folder along with the app and set "voxcpm_model" to its path. The rest of MediaStudio does not need these.
+# Python 3.10 - 3.12, an NVIDIA GPU with CUDA 12+ (6 GB+ VRAM recommended), ffmpeg (already required by the app).
+#
+
+

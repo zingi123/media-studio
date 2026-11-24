@@ -1,0 +1,1500 @@
+diff -ruN '--exclude=__pycache__' '--exclude=STEP1_changes.diff' '--exclude=STEP1_NOTES.md' orig/app/studio/audio.py p/app/studio/audio.py
+--- orig/app/studio/audio.py	2026-11-23 08:08:32.000000000 +0000
++++ p/app/studio/audio.py	2026-11-23 08:20:27.693755532 +0000
+@@ -1,10 +1,11 @@
+-"""Audio side of the studio: Demucs stems (manual), the 5-channel mixer, SFX / music clips, waveform peaks, mix preview.
++"""Audio side of the studio: Demucs stems (manual), the 6-channel mixer, SFX / music / AI-voice clips, waveform peaks, mix preview.
+ 
+ Channels (see model.MIXER_TRACKS):
+-    orig_vocals  - vocals.wav from Demucs            (only after the user pressed the Demucs button)
+-    orig_bg      - no_vocals.wav from Demucs         (music + effects of the original; same)
+-    khmer_voice  - the Khmer AI voice track built from the dialogue lines
+-    sfx / bgm    - clips the user placed on the Sound Effects / Background Music tracks
++    orig_vocals  - "Original Audio": vocals.wav from Demucs when the stems exist, otherwise the video's own full audio
++    orig_bg      - "Background Audio": no_vocals.wav from Demucs (music + effects of the original; only after the Demucs button)
++    khmer_voice  - "Khmer Voice": the track built from the dialogue lines (cue audio)
++    ai_voice     - "AI Voice": its OWN clips (AudioClip.track == "ai_voice"); never merged with khmer_voice
++    sfx / bgm    - clips the user placed on the SFX / Music tracks
+ 
+ Export NEVER starts Demucs by itself any more: it only uses stems that already exist.
+ """
+@@ -55,7 +56,7 @@
+ @dataclass
+ class AudioClip:
+     id: str = field(default_factory=lambda: new_id("a"))
+-    track: str = "sfx"            # sfx | bgm
++    track: str = "sfx"            # sfx | bgm | ai_voice
+     path: str = ""
+     name: str = ""
+     start: float = 0.0            # position on the timeline (s)
+@@ -150,16 +151,43 @@
+     return m
+ 
+ 
+-def gather_inputs(video, voice_wav=None, sfx_clips=(), bgm_clips=(), total_duration=0.0, tmp_dir=None, cancel=None):
+-    """Collect the wavs of every channel that has audio.  Demucs stems are used only if they already exist."""
++def extract_original(video, out_wav, cancel=None):
++    """The video's own audio as a stereo 44.1 kHz wav (cached by name+mtime). Returns the path, or None when the video has no audio."""
++    out_wav = Path(out_wav)
++    stamp = out_wav.with_suffix(".stamp")
++    try:
++        st = Path(video).stat()
++        sig = f"{st.st_size}|{int(st.st_mtime)}"
++    except OSError:
++        sig = ""
++    if out_wav.exists() and stamp.exists() and stamp.read_text() == sig:
++        return str(out_wav)
++    out_wav.parent.mkdir(parents=True, exist_ok=True)
++    try:
++        run_ffmpeg(["-y", "-i", str(Path(video).resolve()), "-vn", "-map", "0:a:0", "-ar", "44100", "-ac", "2", "-c:a", "pcm_s16le", str(out_wav)],
++                   cancel=cancel)
++    except Cancelled:
++        raise
++    except Exception:  # noqa - no audio stream
++        return None
++    stamp.write_text(sig)
++    return str(out_wav)
++
++
++def gather_inputs(video, voice_wav=None, sfx_clips=(), bgm_clips=(), total_duration=0.0, tmp_dir=None, cancel=None,
++                  ai_clips=(), orig_wav=None):
++    """Collect the wavs of every channel that has audio.  Demucs stems are used only if they already exist.
++    orig_wav: the video's full audio, used for 'orig_vocals' ONLY when there are no stems (so Original Audio is never doubled)."""
+     out = {}
+     if video and have_stems(video):
+         p = stem_paths(video)
+         out["orig_vocals"], out["orig_bg"] = str(p["vocals"]), str(p["no_vocals"])
++    elif orig_wav and Path(orig_wav).exists():
++        out["orig_vocals"] = str(orig_wav)
+     if voice_wav and Path(voice_wav).exists():
+         out["khmer_voice"] = str(voice_wav)
+     tmp_dir = Path(tmp_dir or work_dir(Path(video).stem if video else "studio"))
+-    for key, clips in (("sfx", sfx_clips), ("bgm", bgm_clips)):
++    for key, clips in (("sfx", sfx_clips), ("bgm", bgm_clips), ("ai_voice", ai_clips)):
+         if clips:
+             r = render_clip_track(list(clips), total_duration, tmp_dir / f"{key}_track.wav", cancel=cancel)
+             if r:
+diff -ruN '--exclude=__pycache__' '--exclude=STEP1_changes.diff' '--exclude=STEP1_NOTES.md' orig/app/studio/engine.py p/app/studio/engine.py
+--- orig/app/studio/engine.py	1970-01-01 00:00:00.000000000 +0000
++++ p/app/studio/engine.py	2026-11-23 08:24:19.640135433 +0000
+@@ -0,0 +1,227 @@
++"""STEP 2 - unified audio engine (no Qt, so it can be unit-tested).
++
++One MixEngine = one read cursor over up to six TrackSource objects.  The Qt side (app/ui/playback.py) only pulls PCM with
++`render(n)` and pushes it to ONE QAudioSink, so there is exactly one audio output and one clock.
++
++  TrackSource   read-only view (np.memmap) of a stereo 44.1 kHz 16-bit wav that was RENDERED from the project (cache files; the
++                user's original files are never changed).
++  MixEngine     cursor + live gains.  The gain of every track is read from the shared studio.model.Mixer at the start of every
++                chunk, so a slider / mute / solo / enable change is heard within one chunk (+ the sink buffer).
++  build_signature / prepare_sources
++                decide when the cache is stale, and (in a worker thread) render the six tracks to wav files.
++"""
++import hashlib
++import json
++import struct
++from pathlib import Path
++
++import numpy as np
++
++SR = 44100
++FRAME = 4                   # bytes per stereo int16 frame
++CHANNELS = ("orig_vocals", "khmer_voice", "ai_voice", "orig_bg", "bgm", "sfx")     # == model.MIXER_TRACKS
++
++
++# ------------------------------------------------------------------ wav access
++def wav_span(path):
++    """-> (data_offset, data_bytes, channels, rate, bits) read from the RIFF header (works for ffmpeg wavs with extra chunks)."""
++    with open(path, "rb") as f:
++        head = f.read(12)
++        if head[:4] != b"RIFF" or head[8:12] != b"WAVE":
++            raise ValueError("not a wav file")
++        ch = rate = bits = 0
++        while True:
++            h = f.read(8)
++            if len(h) < 8:
++                raise ValueError("wav has no data chunk")
++            cid, size = h[:4], struct.unpack("<I", h[4:])[0]
++            if cid == b"fmt ":
++                fmt = f.read(size)
++                _tag, ch, rate, _br, _ba, bits = struct.unpack("<HHIIHH", fmt[:16])
++            elif cid == b"data":
++                off = f.tell()
++                real = Path(path).stat().st_size - off
++                return off, (min(size, real) if size != 0xFFFFFFFF else real), ch, rate, bits
++            else:
++                f.seek(size + (size & 1), 1)
++
++
++class TrackSource:
++    """Stereo / 44.1 kHz / int16 audio of ONE track, memory-mapped (a 2 h movie does not have to fit in RAM)."""
++
++    def __init__(self, path):
++        off, nbytes, ch, rate, bits = wav_span(path)
++        if (ch, rate, bits) != (2, SR, 16):
++            raise ValueError(f"{path}: need stereo 44100 Hz 16-bit, got {ch} ch {rate} Hz {bits} bit")
++        self.path = str(path)
++        self.frames = nbytes // FRAME
++        self.data = (np.memmap(path, dtype="<i2", mode="r", offset=off, shape=(self.frames, 2))
++                     if self.frames else np.zeros((0, 2), dtype=np.int16))
++
++    @property
++    def duration(self):
++        return self.frames / SR
++
++    def read(self, start, n):
++        """float32 (n, 2) in -1..1 for frames [start, start+n); silence outside the file."""
++        out = np.zeros((n, 2), dtype=np.float32)
++        a, b = max(0, start), min(self.frames, start + n)
++        if b > a:
++            out[a - start:b - start] = self.data[a:b]
++            out[a - start:b - start] *= (1.0 / 32768.0)
++        return out
++
++    def close(self):
++        self.data = np.zeros((0, 2), dtype=np.int16)      # drops the memmap so the file can be replaced / deleted (Windows)
++
++
++# ------------------------------------------------------------------ the mixer
++class MixEngine:
++    """cursor (frames) + sources + the shared Mixer.  `render(n)` mixes the next n frames and moves the cursor."""
++
++    def __init__(self, mixer=None):
++        self.mixer = mixer
++        self.sources = {}
++        self.cursor = 0
++        self.length = 0                       # frames; the end of the project (video length / longest source)
++        self.signature = ""
++        self.listen_only = None               # channel key: "play only this track" (its own volume x master; mute / solo ignored)
++        self._g = {}                          # gain used at the end of the previous chunk (ramped from -> no clicks)
++
++    # ---- sources ----
++    def set_sources(self, sources, length_s=0.0, signature=""):
++        old = self.sources
++        self.sources = dict(sources)
++        self.signature = signature
++        self.length = int(max([length_s] + [s.duration for s in self.sources.values()]) * SR)
++        self._g = {k: self._g.get(k, 0.0) for k in self.sources}
++        for k, s in old.items():
++            if self.sources.get(k) is not s:
++                s.close()
++
++    def has_audio(self):
++        return bool(self.sources)
++
++    # ---- clock ----
++    def seek(self, t):
++        self.cursor = max(0, int(round(float(t) * SR)))
++        self._g = {k: self._current_gains().get(k, 0.0) for k in self.sources}   # no fade-in after a seek: start at the target gain
++
++    @property
++    def time(self):
++        return self.cursor / SR
++
++    def at_end(self):
++        return self.length > 0 and self.cursor >= self.length
++
++    # ---- gains (live) ----
++    def _current_gains(self):
++        if self.mixer is None:
++            return {k: 1.0 for k in self.sources}
++        if self.listen_only in self.sources:
++            c = self.mixer.channels[self.listen_only]
++            return {k: ((c.volume / 100.0) * (self.mixer.master / 100.0) if k == self.listen_only else 0.0) for k in self.sources}
++        return self.mixer.gains(available=set(self.sources))
++
++    def render(self, n):
++        """Mix frames [cursor, cursor+n) -> bytes (int16 stereo little-endian) and advance the cursor."""
++        target = self._current_gains()
++        acc = np.zeros((n, 2), dtype=np.float32)
++        ramp = np.linspace(0.0, 1.0, n, dtype=np.float32)
++        for key, src in self.sources.items():
++            g1 = float(target.get(key, 0.0))
++            g0 = float(self._g.get(key, g1))
++            self._g[key] = g1
++            if g0 <= 0.0005 and g1 <= 0.0005:                    # silent track: do not even read the file
++                continue
++            chunk = src.read(self.cursor, n)
++            if abs(g1 - g0) < 1e-4:
++                acc += chunk * g1
++            else:                                                  # volume / mute / solo changed: smooth ramp across this chunk
++                acc += chunk * (g0 + (g1 - g0) * ramp)[:, None]
++        self.cursor += n
++        np.clip(acc, -1.0, 1.0, out=acc)
++        return (acc * 32767.0).astype("<i2").tobytes()
++
++
++# ------------------------------------------------------------------ cache: when is it stale, how is it built
++def _mt(path):
++    try:
++        st = Path(path).stat()
++        return [str(path), st.st_size, int(st.st_mtime)]
++    except OSError:
++        return [str(path), 0, 0]
++
++
++def build_signature(video, cues, clips, mixer, duration, voice_offset=0.0):
++    """Fingerprint of everything that changes the RENDERED audio.  Volume / mute / solo are NOT in it (they are live);
++    enabled IS (a disabled track is not rendered at all)."""
++    from . import audio as AU
++    stems = AU.stem_paths(video) if video else {}
++    d = {"video": _mt(video) if video else None, "dur": round(float(duration or 0), 2), "voff": round(float(voice_offset), 3),
++         "stems": [_mt(p) for p in stems.values()] if stems and AU.have_stems(video) else [],
++         "cues": [[_mt(c.audio), round(c.start, 3), round(c.end, 3)] for c in cues if c.audio and Path(c.audio).exists()],
++         "clips": [[_mt(k.path), k.to_dict()] for k in clips],
++         "on": {k: bool(c.enabled) for k, c in mixer.channels.items()}}
++    return hashlib.sha1(json.dumps(d, sort_keys=True, default=str).encode()).hexdigest()[:16]
++
++
++def _to_44k_stereo(src, dst, cancel=None):
++    from ..shared.ffmpeg_util import run_ffmpeg
++    try:
++        off, nb, ch, rate, bits = wav_span(src)
++        if (ch, rate, bits) == (2, SR, 16):
++            return str(src)
++    except Exception:  # noqa - not a plain wav: let ffmpeg decode it
++        pass
++    Path(dst).parent.mkdir(parents=True, exist_ok=True)
++    run_ffmpeg(["-y", "-i", str(src), "-vn", "-ar", str(SR), "-ac", "2", "-c:a", "pcm_s16le", str(dst)], cancel=cancel)
++    return str(dst)
++
++
++def prepare_sources(video, cues, clips, mixer, duration, out_dir, voice_offset=0.0, progress=None, cancel=None):
++    """Worker-thread job: render every ENABLED track that has audio to a stereo 44.1 kHz wav in out_dir.  -> {channel: wav path}.
++    Reuses the project's own renderers (build_voice_track, render_clip_track, Demucs stems) so playback == export."""
++    from . import audio as AU
++    out_dir = Path(out_dir)
++    out_dir.mkdir(parents=True, exist_ok=True)
++    on = {k for k, c in mixer.channels.items() if c.enabled}
++    voice = None
++    spoken = [c for c in cues if c.audio and Path(c.audio).exists()]
++    if "khmer_voice" in on and spoken:
++        from ..translator.voice_synchronizer import build_voice_track
++        voice = out_dir / "khmer_voice_24k.wav"
++        build_voice_track(spoken, duration, voice, cancel=cancel, offset=voice_offset)
++    by = {"sfx": [], "bgm": [], "ai_voice": []}
++    for k in clips:
++        if k.track in by and k.track in on:
++            by[k.track].append(k)
++    orig = None
++    others = bool(voice or any(by.values()) or (video and AU.have_stems(video)))
++    # nothing else to mix and Original Audio at 0 % -> engine stays idle and the video plays its own audio as before
++    if "orig_vocals" in on and video and not AU.have_stems(video) and (others or mixer.channels["orig_vocals"].volume > 0):
++        orig = AU.extract_original(video, out_dir.parent / "original_audio.wav", cancel=cancel)
++    inputs = AU.gather_inputs(video, voice, by["sfx"], by["bgm"], duration, tmp_dir=out_dir, cancel=cancel, ai_clips=by["ai_voice"], orig_wav=orig)
++    res = {}
++    for i, (k, p) in enumerate(inputs.items()):
++        if k in on and k in CHANNELS:
++            res[k] = _to_44k_stereo(p, out_dir / f"{k}_44k.wav", cancel=cancel)
++        if progress:
++            progress(int(100 * (i + 1) / max(1, len(inputs))))
++    return res
++
++
++def load_sources(paths):
++    """{channel: wav path} -> {channel: TrackSource}"""
++    return {k: TrackSource(p) for k, p in paths.items()}
++
++
++def cleanup_old(root, keep):
++    """Delete render caches of older signatures (best effort - a file that is still mapped on Windows is simply left)."""
++    import shutil
++    root = Path(root)
++    if not root.exists():
++        return
++    for d in root.iterdir():
++        if d.is_dir() and d.name != keep:
++            shutil.rmtree(d, ignore_errors=True)
+diff -ruN '--exclude=__pycache__' '--exclude=STEP1_changes.diff' '--exclude=STEP1_NOTES.md' orig/app/studio/model.py p/app/studio/model.py
+--- orig/app/studio/model.py	2026-11-23 08:08:32.000000000 +0000
++++ p/app/studio/model.py	2026-11-23 08:20:14.918006481 +0000
+@@ -202,10 +202,11 @@
+         return cls(**{k: v for k, v in (d or {}).items() if k in known})
+ 
+ 
+-MIXER_TRACKS = ("orig_vocals", "orig_bg", "khmer_voice", "sfx", "bgm")
+-MIXER_LABELS = {"orig_vocals": "Original Vocals", "orig_bg": "Background / Instrumental", "khmer_voice": "Khmer AI Voice",
+-                "sfx": "Sound Effects", "bgm": "Background Music"}
+-MIXER_DEFAULT = {"orig_vocals": 0, "orig_bg": 100, "khmer_voice": 100, "sfx": 100, "bgm": 100}   # % (0..200); dubbing mutes the original voice
++# STEP 2: six independent tracks (keys of the 5 old channels are kept, so old project files load unchanged; "ai_voice" is new)
++MIXER_TRACKS = ("orig_vocals", "khmer_voice", "ai_voice", "orig_bg", "bgm", "sfx")
++MIXER_LABELS = {"orig_vocals": "Original Audio", "khmer_voice": "Khmer Voice", "ai_voice": "AI Voice",
++                "orig_bg": "Background Audio", "bgm": "Music", "sfx": "SFX"}
++MIXER_DEFAULT = {"orig_vocals": 0, "orig_bg": 100, "khmer_voice": 100, "ai_voice": 100, "sfx": 100, "bgm": 100}   # % (0..200); dubbing mutes the original voice
+ 
+ 
+ @dataclass
+@@ -213,6 +214,7 @@
+     volume: int = 100       # percent 0..200
+     mute: bool = False
+     solo: bool = False
++    enabled: bool = True    # STEP 2: False = the track is left out completely (not played, not exported, its solo flag is ignored)
+ 
+ 
+ @dataclass
+@@ -230,12 +232,12 @@
+     def gains(self, available=None):
+         """-> {track: linear gain}.  Solo: when any channel is soloed only soloed channels play. Mute wins over solo.
+         `available` limits the result to tracks that really have audio."""
+-        solo = any(c.solo for k, c in self.channels.items() if available is None or k in available)
++        solo = any(c.solo and c.enabled for k, c in self.channels.items() if available is None or k in available)
+         out = {}
+         for k, c in self.channels.items():
+             if available is not None and k not in available:
+                 continue
+-            on = (not c.mute) and (c.solo or not solo)
++            on = c.enabled and (not c.mute) and (c.solo or not solo)
+             out[k] = (c.volume / 100.0) * (self.master / 100.0) if on else 0.0
+         return out
+ 
+@@ -249,7 +251,8 @@
+         m.master = int(d.get("master", 100))
+         for k, v in (d.get("channels") or {}).items():
+             if k in m.channels and isinstance(v, dict):
+-                m.channels[k] = Channel(int(_clamp(v.get("volume", MIXER_DEFAULT[k]), 0, 200)), bool(v.get("mute")), bool(v.get("solo")))
++                m.channels[k] = Channel(int(_clamp(v.get("volume", MIXER_DEFAULT[k]), 0, 200)), bool(v.get("mute")), bool(v.get("solo")),
++                                        bool(v.get("enabled", True)))
+         return m
+ 
+ 
+diff -ruN '--exclude=__pycache__' '--exclude=STEP1_changes.diff' '--exclude=STEP1_NOTES.md' orig/app/ui/mixer_panel.py p/app/ui/mixer_panel.py
+--- orig/app/ui/mixer_panel.py	2026-11-23 08:08:32.000000000 +0000
++++ p/app/ui/mixer_panel.py	2026-11-23 08:22:49.289274619 +0000
+@@ -1,7 +1,7 @@
+-"""Audio Mixer panel: Demucs button, 5 channels (volume / mute / solo / reset / listen), master, listen to the whole mix.
++"""Audio Mixer panel: Demucs button, 6 channels (enable / volume / mute / solo / reset / listen), master, listen to the whole mix.
+ Holds no data: it edits the studio.model.Mixer it is given and emits `changed`."""
+ from PySide6.QtCore import Qt, Signal
+-from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QSlider, QFrame, QGridLayout)
++from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QSlider, QFrame, QGridLayout, QCheckBox)
+ 
+ from ..studio.model import MIXER_TRACKS, MIXER_LABELS
+ 
+@@ -25,7 +25,7 @@
+         self.demucs_btn.clicked.connect(lambda: self.demucsRequested.emit())
+         self.demucs_lbl = QLabel("Demucs: not run"); self.demucs_lbl.setObjectName("muted")
+         top.addWidget(self.demucs_btn); top.addWidget(self.demucs_lbl, 1)
+-        self.listen_all = QPushButton("▶ Listen to mix"); self.listen_all.setToolTip("Plays 30 s of the final mix from the playhead, with these settings")
++        self.listen_all = QPushButton("▶ Play mix"); self.listen_all.setToolTip("Plays the video together with the mix (same as the main Play button)")
+         self.listen_all.clicked.connect(lambda: self.listenRequested.emit(""))
+         stop = QPushButton("■"); stop.setFixedWidth(34); stop.clicked.connect(lambda: self.stopRequested.emit())
+         reset = QPushButton("Reset all"); reset.clicked.connect(self._reset_all)
+@@ -34,6 +34,10 @@
+         grid = QGridLayout(); grid.setHorizontalSpacing(8); grid.setVerticalSpacing(4)
+         for r, key in enumerate(MIXER_TRACKS + ("master",)):
+             name = QLabel(MIXER_LABELS.get(key, "Master")); name.setMinimumWidth(170)
++            if key != "master":
++                en = QCheckBox(); en.setChecked(True); en.setToolTip("Enable / disable this track (disabled = not played, not exported)")
++                grid.addWidget(en, r, 7)
++                en.toggled.connect(lambda on, k=key: self._set(k, enabled=on))
+             sl = QSlider(Qt.Horizontal); sl.setRange(0, 200); sl.setValue(100)
+             val = QLabel("100%"); val.setMinimumWidth(44)
+             grid.addWidget(name, r, 0); grid.addWidget(sl, r, 1); grid.addWidget(val, r, 2)
+@@ -42,14 +46,14 @@
+                 mute = QPushButton("M"); mute.setCheckable(True); mute.setFixedWidth(30); mute.setToolTip("Mute")
+                 solo = QPushButton("S"); solo.setCheckable(True); solo.setFixedWidth(30); solo.setToolTip("Solo: only soloed channels are heard")
+                 rst = QPushButton("↺"); rst.setFixedWidth(30); rst.setToolTip("Reset this channel")
+-                lis = QPushButton("▶"); lis.setFixedWidth(30); lis.setToolTip("Listen to this channel alone")
++                lis = QPushButton("▶"); lis.setFixedWidth(30); lis.setToolTip("Play with only this channel audible (the video plays too)")
+                 for c, w in enumerate((mute, solo, rst, lis)):
+                     grid.addWidget(w, r, 3 + c)
+                 mute.toggled.connect(lambda on, k=key: self._set(k, mute=on))
+                 solo.toggled.connect(lambda on, k=key: self._set(k, solo=on))
+                 rst.clicked.connect(lambda _=False, k=key: self._reset(k))
+                 lis.clicked.connect(lambda _=False, k=key: self.listenRequested.emit(k))
+-                row.update(mute=mute, solo=solo, reset=rst, listen=lis)
++                row.update(mute=mute, solo=solo, reset=rst, listen=lis, enabled=en)
+             sl.valueChanged.connect(lambda v, k=key: self._vol(k, v))
+             self._rows[key] = row
+         grid.setColumnStretch(1, 1)
+@@ -67,7 +71,7 @@
+                 continue
+             c = mixer.channels[key]
+             row["slider"].setValue(c.volume); row["val"].setText(f"{c.volume}%")
+-            row["mute"].setChecked(c.mute); row["solo"].setChecked(c.solo)
++            row["mute"].setChecked(c.mute); row["solo"].setChecked(c.solo); row["enabled"].setChecked(c.enabled)
+         self._busy = False
+ 
+     def set_available(self, have):
+@@ -76,8 +80,8 @@
+             if key == "master":
+                 continue
+             ok = bool(have.get(key))
+-            for w in row.values():
+-                w.setEnabled(ok)
++            for k_, w in row.items():
++                w.setEnabled(ok or k_ == "enabled")
+             row["name"].setText(MIXER_LABELS[key] + ("" if ok else "  (no audio yet)"))
+ 
+     def set_demucs(self, text, running=False):
+@@ -94,7 +98,7 @@
+             self.mixer.channels[key].volume = v
+         self.changed.emit()
+ 
+-    def _set(self, key, mute=None, solo=None):
++    def _set(self, key, mute=None, solo=None, enabled=None):
+         if self._busy or self.mixer is None:
+             return
+         c = self.mixer.channels[key]
+@@ -102,6 +106,8 @@
+             c.mute = bool(mute)
+         if solo is not None:
+             c.solo = bool(solo)
++        if enabled is not None:
++            c.enabled = bool(enabled)
+         self.changed.emit()
+ 
+     def _reset(self, key):
+diff -ruN '--exclude=__pycache__' '--exclude=STEP1_changes.diff' '--exclude=STEP1_NOTES.md' orig/app/ui/playback.py p/app/ui/playback.py
+--- orig/app/ui/playback.py	1970-01-01 00:00:00.000000000 +0000
++++ p/app/ui/playback.py	2026-11-23 08:26:19.060449292 +0000
+@@ -0,0 +1,260 @@
++"""STEP 2 - Qt side of the unified playback.  NOTE: written without a Qt runtime available; see STEP2_NOTES.md (what must be tested).
++
++ONE clock: the video player (QMediaPlayer) position.  Every other thing follows it.
++ONE audio output: AudioOutput = one QAudioSink fed by studio.engine.MixEngine (all six tracks mixed in Python/numpy).
++The video player's own audio is muted while the engine plays, so nothing is heard twice.
++
++    Play / Pause / Stop / end of video  ->  vplayer.playbackStateChanged  ->  audio starts / stops   (single source of truth)
++    Seek / skip / jump                  ->  vplayer.setPosition + audio re-sync
++    Drift (every 50 ms)                 ->  if audio and video differ by > DRIFT s the audio is restarted at the video position
++"""
++import copy
++import time
++from pathlib import Path
++
++from PySide6.QtCore import QObject, QTimer
++from PySide6.QtWidgets import QMessageBox
++
++try:
++    from PySide6.QtMultimedia import QAudioSink, QAudioFormat, QMediaDevices
++except Exception:  # noqa - QtMultimedia missing: the page keeps using the video's own audio
++    QAudioSink = QAudioFormat = QMediaDevices = None
++
++from ..shared.paths import work_dir
++from ..studio import audio as AU
++from ..studio import engine as EN
++from ..studio import model as M
++from .workers import Worker
++
++BUFFER_S = 0.15        # audio buffer: also the delay between moving a slider and hearing it
++PUMP_MS = 10           # how often the buffer is topped up
++SYNC_MS = 50           # how often audio is compared with video
++DRIFT = 0.12           # seconds of audio/video difference that triggers a re-sync
++RESYNC_GAP = 0.5       # never re-sync more often than this (s)
++
++
++class AudioOutput(QObject):
++    """The only audio output of the studio.  start(t) = (re)start playing the engine from time t."""
++
++    def __init__(self, engine, parent=None):
++        super().__init__(parent)
++        self.engine = engine
++        self._sink = None
++        self._io = None
++        self._timer = QTimer(self)
++        self._timer.setInterval(PUMP_MS)
++        self._timer.timeout.connect(self._pump)
++        self.available = False
++        try:
++            if QAudioSink is not None:
++                dev = QMediaDevices.defaultAudioOutput()
++                self.available = (not dev.isNull()) and dev.isFormatSupported(self._fmt())
++        except Exception:  # noqa
++            self.available = False
++
++    @staticmethod
++    def _fmt():
++        f = QAudioFormat()
++        f.setSampleRate(EN.SR)
++        f.setChannelCount(2)
++        f.setSampleFormat(QAudioFormat.SampleFormat.Int16)
++        return f
++
++    @property
++    def running(self):
++        return self._io is not None
++
++    def start(self, t):
++        self.stop()
++        if not self.available:
++            return
++        self.engine.seek(t)
++        self._sink = QAudioSink(QMediaDevices.defaultAudioOutput(), self._fmt(), self)
++        self._sink.setBufferSize(int(EN.SR * BUFFER_S) * EN.FRAME)
++        self._io = self._sink.start()
++        self._pump()
++        self._timer.start()
++
++    def stop(self):
++        self._timer.stop()
++        if self._sink is not None:
++            self._sink.stop()
++            self._sink.deleteLater()
++        self._sink, self._io = None, None
++
++    def _pump(self):
++        if self._io is None:
++            return
++        for _ in range(3):
++            n = self._sink.bytesFree() // EN.FRAME
++            if n < 256:
++                return
++            self._io.write(self.engine.render(min(n, 4096)))
++
++    def audible_time(self):
++        """Timeline time that is coming out of the speakers now = write cursor - what is still waiting in the buffer."""
++        if self._sink is None:
++            return self.engine.time
++        buffered = max(0, self._sink.bufferSize() - self._sink.bytesFree()) / EN.FRAME
++        return self.engine.time - buffered / EN.SR
++
++
++class PlaybackMixin:
++    """Mixed into StudioMixin -> TranslatorPage.  Needs: self.vplayer, self.vaudio, self._QMP, self.mixer, self.cues, self.clips,
++    self.video, self.vid_dur, self.voice_off, self.btn_play, self.log."""
++
++    # ------------------------------------------------------------------ setup
++    def _pb_init(self):
++        self.engine = EN.MixEngine(self.mixer)
++        self._pb_out = AudioOutput(self.engine, self)
++        self._pb_worker = None
++        self._pb_last_resync = 0.0
++        self._pb_rendered_on = None            # which tracks were enabled when the cache was last rendered
++        self._pb_sync_timer = QTimer(self)
++        self._pb_sync_timer.setInterval(SYNC_MS)
++        self._pb_sync_timer.timeout.connect(self._pb_sync)
++
++    def _pb_wire(self):
++        if self.vplayer is not None:
++            self.vplayer.playbackStateChanged.connect(self._pb_on_state)
++
++    def _pb_set_mixer(self, mixer):
++        self.engine.mixer = mixer
++
++    # ------------------------------------------------------------------ helpers
++    def _pb_enabled_snapshot(self):
++        return tuple(sorted((k, c.enabled) for k, c in self.mixer.channels.items()))
++
++    def _pb_signature(self):
++        return EN.build_signature(self.video, self.cues, self.clips, self.mixer, self.vid_dur, self.voice_off.value())
++
++    def _pb_engine_mode(self):
++        return self._pb_out.available and self.engine.has_audio()
++
++    def _pb_apply_vaudio(self):
++        """Engine plays -> the video's own audio is muted (no double audio).  Engine idle -> video audio as before; there only
++        Mute / Disable of 'Original Audio' is honoured (its volume default of 0 % is a dubbing default, not 'silence the video')."""
++        if getattr(self, "vaudio", None) is None:
++            return
++        if self._pb_engine_mode():
++            self.vaudio.setMuted(True)
++        else:
++            c = self.mixer.channels["orig_vocals"]
++            self.vaudio.setMuted((not c.enabled) or c.mute)
++
++    # ------------------------------------------------------------------ the main controls
++    def _pb_play_pressed(self):
++        """Play button: the video is started ONLY after the audio of all enabled tracks is ready (rendered once, then cached)."""
++        if self._pb_worker is not None and self._pb_worker.isRunning():
++            return                                                           # still preparing: ignore extra clicks
++        if self._pb_signature() == self.engine.signature:
++            self._pb_apply_vaudio()
++            self.vplayer.play()
++        else:
++            self._pb_prepare(then_play=True)
++
++    def _pb_stop(self):
++        """Stop = pause + back to the start."""
++        self.engine.listen_only = None
++        self.vplayer.pause()
++        self._pb_set_pos(0.0)
++
++    def _pb_set_pos(self, t):
++        """Seek video and audio together."""
++        t = max(0.0, float(t))
++        self.vplayer.setPosition(int(t * 1000))
++        if self._pb_out.running:
++            self._pb_out.start(t)
++            self._pb_last_resync = time.monotonic()
++
++    def _pb_on_state(self, state):
++        if state == self._QMP.PlayingState:
++            if self._pb_engine_mode():
++                self._pb_out.start(self.vplayer.position() / 1000.0)
++                self._pb_last_resync = time.monotonic()
++                self._pb_sync_timer.start()
++        else:
++            self._pb_sync_timer.stop()
++            self._pb_out.stop()
++            if state == self._QMP.StoppedState:
++                self.engine.listen_only = None
++
++    def _pb_sync(self):
++        if not self._pb_out.running or self.vplayer is None:
++            return
++        now = time.monotonic()
++        if now - self._pb_last_resync < RESYNC_GAP:
++            return
++        vt = self.vplayer.position() / 1000.0
++        if abs(self._pb_out.audible_time() - vt) > DRIFT:
++            self._pb_out.start(vt)
++            self._pb_last_resync = now
++
++    # ------------------------------------------------------------------ preparing the audio (worker thread)
++    def _pb_prepare(self, then_play=False):
++        if not self.video:
++            return
++        sig = self._pb_signature()
++        self._pb_rendered_on = self._pb_enabled_snapshot()
++        job_args = (self.video, copy.deepcopy(self.cues), [AU.AudioClip.from_dict(k.to_dict()) for k in self.clips],
++                    M.Mixer.from_dict(self.mixer.to_dict()), self.vid_dur, work_dir(Path(self.video).stem) / "playback" / sig,
++                    self.voice_off.value())
++        w = Worker(EN.prepare_sources, *job_args)
++        w.done.connect(lambda res: self._pb_prepared(res, sig, then_play))
++        w.failed.connect(lambda msg: self._pb_failed(msg, then_play))
++        self._pb_worker = w
++        if then_play:
++            self.btn_play.setEnabled(False)
++            self.log.appendPlainText("Preparing audio tracks for playback (only when something changed)...")
++        w.start()
++
++    def _pb_prepared(self, res, sig, then_play):
++        try:
++            srcs = EN.load_sources(res)
++        except Exception as e:  # noqa
++            self.log.appendPlainText(f"Playback mixer could not load the audio ({e}); the video's own audio is used.")
++            srcs = {}
++        was_playing = self._playing()
++        self.engine.set_sources(srcs, self.vid_dur, sig)
++        EN.cleanup_old(work_dir(Path(self.video).stem) / "playback", sig)
++        lo = self.engine.listen_only
++        if lo and lo not in srcs:
++            self.log.appendPlainText("That track has no audio yet (or it is disabled).")
++            self.engine.listen_only = None
++        self.btn_play.setEnabled(True)
++        self._pb_apply_vaudio()
++        if srcs and not self._pb_out.available:
++            self.log.appendPlainText("No usable audio output device for the mixer; the video's own audio is used.")
++        if then_play:
++            self.vplayer.play()
++        elif was_playing and self._pb_engine_mode():
++            self._pb_out.start(self.vplayer.position() / 1000.0)           # new sources while playing: continue seamlessly
++
++    def _pb_failed(self, msg, then_play):
++        self.btn_play.setEnabled(True)
++        if msg != "Cancelled":
++            self.log.appendPlainText(f"Playback mixer: preparing the audio failed ({msg}). The video plays with its own audio.")
++        self.engine.set_sources({}, self.vid_dur, self._pb_signature())
++        self._pb_apply_vaudio()
++        if then_play:
++            self.vplayer.play()
++
++    # ------------------------------------------------------------------ mixer panel hooks
++    def _pb_mixer_changed(self):
++        """Volume / mute / solo need nothing: the engine reads the Mixer on every chunk.  Enable / disable changes WHAT has to be
++        rendered, so the cache is rebuilt (playback continues when it is ready)."""
++        if (self.engine.signature and self.video and self._pb_enabled_snapshot() != self._pb_rendered_on
++                and (self._pb_worker is None or not self._pb_worker.isRunning())):
++            self._pb_prepare(then_play=False)
++        self._pb_apply_vaudio()
++
++    def _pb_listen(self, channel):
++        """The per-track ▶ / 'Play mix' buttons: the SAME playback as the main Play button (video + mix), optionally with only
++        one track audible.  No separate preview player."""
++        if not self.video or self.vplayer is None:
++            QMessageBox.information(self, "Video", "Import a video first.")
++            return
++        self.engine.listen_only = channel or None
++        if self._playing():
++            return
++        self._pb_play_pressed()
+diff -ruN '--exclude=__pycache__' '--exclude=STEP1_changes.diff' '--exclude=STEP1_NOTES.md' orig/app/ui/studio_integration.py p/app/ui/studio_integration.py
+--- orig/app/ui/studio_integration.py	2026-11-23 08:08:32.000000000 +0000
++++ p/app/ui/studio_integration.py	2026-11-23 08:24:13.181407235 +0000
+@@ -21,9 +21,10 @@
+ from .studio_panels import StudioToolsPanel, InspectorPanel
+ from .studio_timeline import StudioTimeline
+ from .video_canvas import VideoCanvas
++from .playback import PlaybackMixin
+ 
+ 
+-class StudioMixin:
++class StudioMixin(PlaybackMixin):
+     # ------------------------------------------------------------------ state
+     def _studio_init(self):
+         self.scene = M.Scene()
+@@ -34,9 +35,10 @@
+         self._manual = set()                  # primary objects the user placed by hand (legacy position presets no longer override them)
+         self._last_soft_capture = 0.0
+         self._save_timer = None
+-        self.mixplayer = None
++        self.mixplayer = None                 # (STEP 2: not used any more - the mixer plays through the unified engine)
+         self._mix_prev_vol = None
+         self._video_fp = ""
++        self._pb_init()                       # STEP 2: unified audio engine (needs self.mixer)
+ 
+     # ------------------------------------------------------------------ widgets
+     def _studio_make_canvas(self):
+@@ -88,7 +90,7 @@
+         mp.changed.connect(self._st_mixer_changed)
+         mp.demucsRequested.connect(self.run_demucs_clicked)
+         mp.listenRequested.connect(self._st_listen)
+-        mp.stopRequested.connect(self._st_stop_listen)
++        mp.stopRequested.connect(lambda: self._pb_stop() if self.vplayer else None)
+         self.bottom_tabs = QTabWidget()
+         self.table.setMinimumHeight(40)                       # small minimums: the video above gets the height; the table scrolls
+         mix_sc = QScrollArea(); mix_sc.setWidgetResizable(True); mix_sc.setFrameShape(QFrame.NoFrame); mix_sc.setWidget(mp)
+@@ -112,6 +114,7 @@
+ 
+     # ------------------------------------------------------------------ wiring after the page is built
+     def _studio_wire(self):
++        self._pb_wire()                       # STEP 2: audio follows the video player state
+         # legacy Style tabs  ->  primary objects
+         L = self._legacy_to_scene
+         for wd in (self.blur_pct,):
+@@ -574,7 +577,9 @@
+             return
+         have_stems = bool(self.video) and AU.have_stems(self.video)
+         voiced = any(D.has_audio(c) for c in self.cues)
+-        self.mixer_panel.set_available({"orig_vocals": have_stems, "orig_bg": have_stems, "khmer_voice": voiced,
++        has_video = bool(self.video)
++        self.mixer_panel.set_available({"orig_vocals": has_video, "orig_bg": have_stems, "khmer_voice": voiced,
++                                        "ai_voice": any(k.track == "ai_voice" for k in self.clips),
+                                         "sfx": any(k.track == "sfx" for k in self.clips), "bgm": any(k.track == "bgm" for k in self.clips)})
+         self.mixer_panel.set_demucs("Demucs: ready (vocals + background separated)" if have_stems else
+                                     "Demucs: not run - press the button to split the original voice from the music", False)
+@@ -586,57 +591,21 @@
+             self.bg_vol.setValue(self.mixer.channels["orig_bg"].volume)
+         finally:
+             self._sync_guard = False
++        self._pb_mixer_changed()              # STEP 2: volume / mute / solo are read live by the engine; enable/disable re-renders
+         self._st_schedule_save()
+ 
+     def _st_listen(self, channel):
+-        if not self._need_video():
+-            return
++        """'Play mix' / per-track ▶: the SAME playback as the main Play button (video + all tracks); channel = only that track audible.
++        (STEP 2: the old separate 30 s preview player, which paused the video, was removed.)"""
+         self._collect_focus()
+-        start = max(0.0, (self.vplayer.position() / 1000.0) if self.vplayer else self.tl.playhead)
+-        length = 30.0
+-        mixer = AU.solo_mixer(self.mixer, channel) if channel else M.Mixer.from_dict(self.mixer.to_dict())
+-        clips = [AU.AudioClip.from_dict(k.to_dict()) for k in self.clips]
+-        keep = self.keep_bg.isChecked()
+-        voff = self.voice_off.value()
+-        video, stem, dur = self.video, Path(self.video).stem, self.vid_dur or (start + length)
+-        cues = [c for c in self.cues if D.has_audio(c) and c.end > start - 1 and c.start < start + length]
+-
+-        def job(progress=None, cancel=None):
+-            wd = work_dir(stem)
+-            voice = None
+-            if cues:
+-                voice = wd / "voice_preview.wav"
+-                build_voice_track(cues, start + length, voice, cancel=cancel, offset=voff)
+-            inputs = AU.gather_inputs(video, voice, [k for k in clips if k.track == "sfx"], [k for k in clips if k.track == "bgm"],
+-                                      dur, tmp_dir=wd, cancel=cancel)
+-            if not keep:
+-                inputs.pop("orig_vocals", None); inputs.pop("orig_bg", None)
+-            if channel and channel not in inputs:
+-                raise RuntimeError("This channel has no audio yet" + (" - press the Demucs button first." if channel.startswith("orig") else "."))
+-            if not inputs:
+-                raise RuntimeError("Nothing to play yet: generate the Khmer voice, add SFX / music, or run Demucs.")
+-            return AU.render_mix(inputs, mixer, wd / "mix_preview.wav", start=start, duration=length, cancel=cancel)
+-        self.log.appendPlainText("Rendering a 30 s preview of the mix...")
+-        self._run(job, done=lambda p: self._st_play_mix(p, start), alert=True)
+-
+-    def _st_play_mix(self, path, start):
+-        try:
+-            from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput
+-        except Exception:  # noqa
+-            self.log.appendPlainText(f"Preview mix saved: {path} (QtMultimedia is not available to play it here)."); return
+-        if self.mixplayer is None:
+-            self.mixplayer = QMediaPlayer(self)
+-            self._mixout = QAudioOutput(self); self._mixout.setVolume(0.9)
+-            self.mixplayer.setAudioOutput(self._mixout)
+-            self.mixplayer.mediaStatusChanged.connect(lambda s: self._st_stop_listen() if s == QMediaPlayer.EndOfMedia else None)
+-        if self.vplayer:
+-            self.vplayer.pause(); self.vplayer.setPosition(int(start * 1000))
+-        self.mixplayer.setSource(QUrl.fromLocalFile(str(path)))
+-        self.mixplayer.play()
++        self._pb_listen(channel)
+ 
+     def _st_stop_listen(self):
+-        if self.mixplayer is not None:
+-            self.mixplayer.stop()
++        """Called by 'Stop all' (processing): only ends a 'listen to one track' playback, never touches normal playback."""
++        if self.engine.listen_only:
++            self.engine.listen_only = None
++            if self.vplayer and self._playing():
++                self.vplayer.pause()
+ 
+     # ------------------------------------------------------------------ project persistence
+     def _st_paths(self):
+@@ -680,6 +649,7 @@
+         sc, mx, extra = M.load_project(proj)
+         if existed:
+             self.scene, self.mixer = sc, mx
++            self._pb_set_mixer(self.mixer)
+             self.clips = [AU.AudioClip.from_dict(x) for x in extra.get("clips", [])]
+         else:
+             keep_frame = self.scene.frame
+@@ -688,6 +658,7 @@
+         if self.scene.frame.auto_fit and not existed:
+             self.scene.frame.auto_choose(w, h)
+         self.hist = TR.StudioHistory()
++        self.engine.set_sources({}, 0.0, "")      # STEP 2: audio of the previous video must not stay loaded
+         self.canvas.set_source(w, h, dur)
+         self._st_set_scene(self.scene)
+         self.mixer_panel.set_mixer(self.mixer)
+diff -ruN '--exclude=__pycache__' '--exclude=STEP1_changes.diff' '--exclude=STEP1_NOTES.md' orig/app/ui/studio_timeline.py p/app/ui/studio_timeline.py
+--- orig/app/ui/studio_timeline.py	2026-11-23 08:08:32.000000000 +0000
++++ p/app/ui/studio_timeline.py	2026-11-23 08:22:49.288731417 +0000
+@@ -23,9 +23,9 @@
+ GUT = 78
+ RULER = 24
+ GAP = 4
+-TRACKS = (("video", "VIDEO", 34), ("dialogue", "KHMER", 44), ("voice", "AI VOICE", 44), ("sfx", "SFX", 36), ("bgm", "MUSIC", 36))
++TRACKS = (("video", "VIDEO", 34), ("dialogue", "KHMER", 44), ("voice", "KH VOICE", 44), ("ai_voice", "AI VOICE", 36), ("sfx", "SFX", 36), ("bgm", "MUSIC", 36))
+ COLORS = {"video": "#26324f", "dialogue": T["tl_text"], "dialogue_empty": T["tl_text_empty"], "voice": T["tl_audio"],
+-          "sfx": "#c9782a", "bgm": "#2f9e6b"}
++          "sfx": "#c9782a", "bgm": "#2f9e6b", "ai_voice": "#7a5cc9"}
+ EDGE = 7
+ MIN_PPS, MAX_PPS = 2.0, 600.0
+ 
+@@ -121,7 +121,7 @@
+                 length = c.voice_dur if getattr(c, "voice_dur", 0) > 0 else (c.end - c.start)
+                 out.append({"track": "voice", "kind": "cue", "ref": i, "t0": c.start, "t1": c.start + max(length, 0.05)})
+         for k in o.clips():
+-            out.append({"track": k.track if k.track in ("sfx", "bgm") else "sfx", "kind": "clip", "ref": k.id, "t0": k.start, "t1": k.end})
++            out.append({"track": k.track if k.track in ("sfx", "bgm", "ai_voice") else "sfx", "kind": "clip", "ref": k.id, "t0": k.start, "t1": k.end})
+         return out
+ 
+     def hit(self, x, y):
+@@ -454,7 +454,7 @@
+                 b.setFixedWidth(30)
+             bar.addWidget(b)
+         bar.addStretch(1)
+-        for text, tr in (("+ SFX", "sfx"), ("+ Music", "bgm")):
++        for text, tr in (("+ AI Voice", "ai_voice"), ("+ SFX", "sfx"), ("+ Music", "bgm")):
+             b = QPushButton(text); b.setFixedHeight(26); b.setToolTip("Add an audio file to this track at the playhead")
+             b.clicked.connect(lambda _=False, t=tr: self.addAudioRequested.emit(t)); bar.addWidget(b)
+         self.regen_btn = QPushButton("⟳ Regenerate edited"); self.regen_btn.setFixedHeight(26)
+diff -ruN '--exclude=__pycache__' '--exclude=STEP1_changes.diff' '--exclude=STEP1_NOTES.md' orig/app/ui/translator_page.py p/app/ui/translator_page.py
+--- orig/app/ui/translator_page.py	2026-11-23 08:10:06.000000000 +0000
++++ p/app/ui/translator_page.py	2026-11-23 08:24:02.134821613 +0000
+@@ -1325,6 +1325,7 @@
+         mixer = _Mixer.from_dict(self.mixer.to_dict())                      # thread-safe copies for the worker
+         sfx_clips = [AU.AudioClip.from_dict(k.to_dict()) for k in self.clips if k.track == "sfx"]
+         bgm_clips = [AU.AudioClip.from_dict(k.to_dict()) for k in self.clips if k.track == "bgm"]
++        ai_clips = [AU.AudioClip.from_dict(k.to_dict()) for k in self.clips if k.track == "ai_voice"]      # STEP 2: AI Voice track
+ 
+         def job(progress=None, cancel=None):
+             msgs = []
+@@ -1342,7 +1343,11 @@
+             # Final audio = the Audio mixer (volume / mute / solo per channel). Demucs is NEVER started here: only stems that the
+             # Demucs button already made are used.
+             if wav is not None:
+-                inputs = AU.gather_inputs(self.video, wav, sfx_clips, bgm_clips, dur, tmp_dir=work_dir(stem), cancel=cancel)
++                oc = mixer.channels["orig_vocals"]
++                orig_wav = (AU.extract_original(self.video, work_dir(stem) / "original_audio.wav", cancel=cancel)
++                            if keep_bg and oc.enabled and oc.volume > 0 and not AU.have_stems(self.video) else None)   # STEP 2
++                inputs = AU.gather_inputs(self.video, wav, sfx_clips, bgm_clips, dur, tmp_dir=work_dir(stem), cancel=cancel,
++                                          ai_clips=ai_clips, orig_wav=orig_wav)
+                 if not keep_bg:
+                     inputs.pop("orig_vocals", None); inputs.pop("orig_bg", None)
+                 elif mode in (3, 4) and not AU.have_stems(self.video):
+@@ -1647,15 +1652,17 @@
+         self.tc = QLabel("00:00.00 / 00:00.00"); self.tc.setObjectName("timecode")
+         self.tc.ensurePolished(); self.tc.setMinimumWidth(self.tc.sizeHint().width() + 4)      # fixed room for the time text: the bar does not jitter while playing
+         self.btn_prev = QPushButton("↺ 10s"); self.btn_play = QPushButton("▶"); self.btn_next = QPushButton("10s ↻")
++        self.btn_stop = QPushButton("■"); self.btn_stop.setToolTip("Stop: video and all audio tracks stop, back to the start")
++        self.btn_stop.setFixedWidth(40); self.btn_stop.clicked.connect(lambda: self._pb_stop() if self.vplayer else None)
+         self.btn_prev.setToolTip("Back 10 seconds"); self.btn_next.setToolTip("Forward 10 seconds")
+         for b, fn, w_ in ((self.btn_prev, lambda: self._skip(-10), 62), (self.btn_play, self._toggle_play, 44), (self.btn_next, lambda: self._skip(10), 62)):
+             b.setFixedWidth(w_); b.clicked.connect(fn)
+         self.seek = QSlider(Qt.Horizontal); self.seek.setRange(0, 1000)
+         self.seek.sliderMoved.connect(lambda v: self._seek(v / 1000.0 * self.vid_dur))
+         pb = self._prev_btn(); pb.setText("Preview Effects"); pb.setToolTip("Render one frame with the same blur / subtitle / logo filters the export will use")
+-        self.transport = TransportBar(self.tc, self.btn_prev, self.btn_play, self.btn_next, self.seek, pb)
++        self.transport = TransportBar(self.tc, self.btn_prev, self.btn_play, self.btn_next, self.seek, pb, stop=self.btn_stop)
+         lay.addWidget(self.transport)
+-        for b in (self.btn_prev, self.btn_play, self.btn_next, self.seek):
++        for b in (self.btn_prev, self.btn_play, self.btn_stop, self.btn_next, self.seek):
+             b.setEnabled(self.vplayer is not None)
+         return f
+ 
+@@ -2029,7 +2036,7 @@
+     def _seek(self, t):   # t in seconds (timeline click or seek slider)
+         if not (self.vplayer and self.video):
+             self.tl.set_playhead(t); self.canvas.set_time(t); return
+-        self.vplayer.setPosition(int(max(0.0, t) * 1000))
++        self._pb_set_pos(t)                 # video + audio together
+ 
+     def _playing(self):
+         return bool(self.vplayer and self.vplayer.playbackState() == self._QMP.PlayingState)
+@@ -2037,7 +2044,7 @@
+     def _toggle_play(self):
+         if not (self.vplayer and self.video):
+             return
+-        self.vplayer.pause() if self._playing() else self.vplayer.play()
++        self.vplayer.pause() if self._playing() else self._pb_play_pressed()
+ 
+     def _sync_play_btn(self):
+         self.btn_play.setText("⏸" if self._playing() else "▶")
+@@ -2047,7 +2054,7 @@
+             return
+         t = self.vplayer.position() / 1000.0 + secs
+         t = max(0.0, min(t, self.vid_dur if self.vid_dur > 0 else t))
+-        self.vplayer.setPosition(int(t * 1000))
++        self._pb_set_pos(t)
+ 
+     def _jump_cue(self, d):
+         if not (self.vplayer and self.cues):
+@@ -2059,7 +2066,7 @@
+         else:
+             t = next((s for s in reversed(starts) if s < now - 0.5), 0.0)
+         if t is not None:
+-            self.vplayer.setPosition(int(t * 1000))
++            self._pb_set_pos(t)
+ 
+     def _open_preview(self, path):
+         self.pv_title.setText(Path(path).name)
+diff -ruN '--exclude=__pycache__' '--exclude=STEP1_changes.diff' '--exclude=STEP1_NOTES.md' orig/app/ui/translator_widgets.py p/app/ui/translator_widgets.py
+--- orig/app/ui/translator_widgets.py	2026-11-23 08:10:06.000000000 +0000
++++ p/app/ui/translator_widgets.py	2026-11-23 08:24:02.133187962 +0000
+@@ -169,10 +169,12 @@
+     SEEK_MIN = 160          # the seek bar keeps at least this width in the one-row layout
+     GAP = 6
+ 
+-    def __init__(self, time_lbl, back, play, fwd, seek, extra, parent=None):
++    def __init__(self, time_lbl, back, play, fwd, seek, extra, parent=None, stop=None):
+         super().__init__(parent)
+         self.setObjectName("plain")
+         self._w = dict(time=time_lbl, back=back, play=play, fwd=fwd, seek=seek, extra=extra)
++        if stop is not None:                      # STEP 2: optional Stop button right after Play
++            self._w["stop"] = stop
+         self._grid = QGridLayout(self)
+         self._grid.setContentsMargins(0, 0, 0, 0)
+         self._grid.setHorizontalSpacing(self.GAP)
+@@ -192,12 +194,14 @@
+         return max(w.sizeHint().width(), w.minimumWidth())
+ 
+     def _wide_needed(self):
+-        parts = [self._hint_w(k) for k in ("time", "back", "play", "fwd", "extra")]
+-        return sum(parts) + self.SEEK_MIN + self.GAP * 5
++        keys = ("time", "back", "play", "fwd", "extra") + (("stop",) if "stop" in self._w else ())
++        parts = [self._hint_w(k) for k in keys]
++        return sum(parts) + self.SEEK_MIN + self.GAP * len(keys)
+ 
+     def _narrow_needed(self):
+-        row1 = self._hint_w("back") + self._hint_w("play") + self._hint_w("fwd") + self._hint_w("extra") + self.GAP * 3
+-        btns = self._hint_w("back") + self._hint_w("play") + self._hint_w("fwd") + self.GAP * 2
++        st = self._hint_w("stop") if "stop" in self._w else 0
++        row1 = self._hint_w("back") + self._hint_w("play") + self._hint_w("fwd") + self._hint_w("extra") + st + self.GAP * (4 if st else 3)
++        btns = self._hint_w("back") + self._hint_w("play") + self._hint_w("fwd") + st + self.GAP * (3 if st else 2)
+         row2 = max(self._hint_w("time"), btns) + self.GAP + max(60, self._hint_w("extra"))
+         return max(row1, row2)
+ 
+@@ -211,17 +215,19 @@
+         for x in w.values():
+             g.removeWidget(x)
+         if wide:
+-            for col, k in enumerate(("time", "back", "play", "fwd", "seek", "extra")):
++            order = ("time", "back", "play") + (("stop",) if "stop" in w else ()) + ("fwd", "seek", "extra")
++            for col, k in enumerate(order):
+                 g.addWidget(w[k], 0, col)
+-            g.setColumnStretch(4, 1)
++            g.setColumnStretch(order.index("seek"), 1)
+         else:
+-            g.addWidget(w["back"], 0, 0)
+-            g.addWidget(w["play"], 0, 1)
+-            g.addWidget(w["fwd"], 0, 2)
+-            g.addWidget(w["extra"], 0, 4)
+-            g.addWidget(w["time"], 1, 0, 1, 3)
+-            g.addWidget(w["seek"], 1, 3, 1, 2)
+-            g.setColumnStretch(3, 1)
++            row0 = ("back", "play") + (("stop",) if "stop" in w else ()) + ("fwd",)
++            n = len(row0)
++            for col, k in enumerate(row0):
++                g.addWidget(w[k], 0, col)
++            g.addWidget(w["extra"], 0, n + 1)
++            g.addWidget(w["time"], 1, 0, 1, n)
++            g.addWidget(w["seek"], 1, n, 1, 2)
++            g.setColumnStretch(n, 1)
+         for x in w.values():
+             x.show()
+         self.setFixedHeight(self._row_h() if wide else self._row_h() * 2 + self.GAP)   # one row / two rows
+diff -ruN '--exclude=__pycache__' '--exclude=STEP1_changes.diff' '--exclude=STEP1_NOTES.md' orig/tests/test_step2_audio.py p/tests/test_step2_audio.py
+--- orig/tests/test_step2_audio.py	1970-01-01 00:00:00.000000000 +0000
++++ p/tests/test_step2_audio.py	2026-11-23 08:25:23.600771243 +0000
+@@ -0,0 +1,280 @@
++"""STEP 2 tests - need NO Qt, but need numpy + ffmpeg.  Run from the project root:  python tests/test_step2_audio.py -v
++They test the model, the MixEngine (what the speakers would receive) and the whole six-track render with real ffmpeg.
++They can NOT test QAudioSink / QMediaPlayer / the widgets (see STEP2_NOTES.md)."""
++import json, os, shutil, subprocess, sys, tempfile, unittest, wave
++import numpy as np
++
++ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
++sys.path.insert(0, ROOT)
++
++from app.studio import model as M                      # noqa: E402
++from app.studio import audio as AU                     # noqa: E402
++from app.studio import engine as EN                    # noqa: E402
++from app.shared.paths import work_dir                  # noqa: E402
++from app.translator.subtitles import Cue               # noqa: E402
++
++SR = 44100
++FREQ = {"orig_vocals": 220, "khmer_voice": 330, "ai_voice": 440, "orig_bg": 550, "bgm": 660, "sfx": 880}   # one tone per track
++
++
++def tone(freq, secs, amp=0.1, sr=SR, ch=2):
++    t = np.arange(int(secs * sr)) / sr
++    x = (np.sin(2 * np.pi * freq * t) * amp * 32767).astype("<i2")
++    return np.repeat(x[:, None], ch, axis=1) if ch > 1 else x
++
++
++def write_wav(path, data, sr=SR):
++    ch = 1 if data.ndim == 1 else data.shape[1]
++    with wave.open(str(path), "wb") as w:
++        w.setnchannels(ch); w.setsampwidth(2); w.setframerate(sr); w.writeframes(data.tobytes())
++    return str(path)
++
++
++def level(pcm_bytes, freq):
++    """amplitude (0..1) of `freq` Hz in an int16 stereo byte block (block length = whole seconds -> exact FFT bins)"""
++    a = np.frombuffer(pcm_bytes, dtype="<i2").reshape(-1, 2)[:, 0].astype(np.float64) / 32768.0
++    spec = np.abs(np.fft.rfft(a)) / (len(a) / 2)
++    return float(spec[int(round(freq * len(a) / SR))])
++
++
++def render_seconds(eng, secs, chunk=2205):
++    out, left = [], int(round(secs * SR))
++    while left > 0:
++        n = min(chunk, left)
++        out.append(eng.render(n)); left -= n
++    return b"".join(out)
++
++
++def peak_levels(pcm):
++    return {k: level(pcm, f) for k, f in FREQ.items()}
++
++
++class Base(unittest.TestCase):
++    @classmethod
++    def setUpClass(cls):
++        cls.tmp = tempfile.mkdtemp(prefix="ms_step2_")
++        cls.wav = {k: write_wav(os.path.join(cls.tmp, f"{k}.wav"), tone(f, 12)) for k, f in FREQ.items()}
++
++    @classmethod
++    def tearDownClass(cls):
++        shutil.rmtree(cls.tmp, ignore_errors=True)
++
++    def engine(self, keys=None, mixer=None):
++        e = EN.MixEngine(mixer or M.Mixer())
++        e.mixer.reset()
++        for c in e.mixer.channels.values():
++            c.volume = 100
++        e.set_sources({k: EN.TrackSource(self.wav[k]) for k in (keys or FREQ)}, 12.0, "t")
++        return e
++
++
++# ---------------------------------------------------------------------------------------------------------------- model
++class TestModel(unittest.TestCase):
++    def test_six_tracks_separate(self):
++        self.assertEqual(set(M.MIXER_TRACKS), set(FREQ))
++        self.assertEqual(len(M.MIXER_TRACKS), 6)
++        self.assertIn("khmer_voice", M.MIXER_TRACKS); self.assertIn("ai_voice", M.MIXER_TRACKS)
++
++    def test_old_project_5_channels_loads(self):
++        old = {"master": 80, "channels": {k: {"volume": 70, "mute": False, "solo": False}
++                                           for k in ("orig_vocals", "orig_bg", "khmer_voice", "sfx", "bgm")}}
++        m = M.Mixer.from_dict(json.loads(json.dumps(old)))
++        self.assertEqual(m.master, 80)
++        self.assertEqual(m.channels["khmer_voice"].volume, 70)
++        self.assertEqual(m.channels["ai_voice"].volume, 100)                    # the new channel gets its default
++        self.assertTrue(all(c.enabled for c in m.channels.values()))            # old files: everything enabled
++        self.assertEqual(M.Mixer.from_dict(m.to_dict()).to_dict(), m.to_dict())  # new files round-trip
++
++    def test_mute_solo_enable(self):
++        m = M.Mixer(); [setattr(c, "volume", 100) for c in m.channels.values()]
++        m.channels["sfx"].mute = True
++        g = m.gains(); self.assertEqual(g["sfx"], 0.0); self.assertTrue(all(g[k] == 1.0 for k in g if k != "sfx"))
++        m.channels["sfx"].mute = False; m.channels["ai_voice"].solo = True
++        g = m.gains(); self.assertEqual([k for k, v in g.items() if v > 0], ["ai_voice"])
++        m.channels["ai_voice"].enabled = False                                   # a disabled track's solo flag must not silence the others
++        g = m.gains(); self.assertEqual(g["ai_voice"], 0.0); self.assertTrue(all(g[k] == 1.0 for k in g if k != "ai_voice"))
++        m.channels["khmer_voice"].solo = True; m.channels["khmer_voice"].mute = True   # mute wins over solo
++        self.assertEqual(m.gains()["khmer_voice"], 0.0)
++
++    def test_master(self):
++        m = M.Mixer(); m.master = 50
++        for c in m.channels.values():
++            c.volume = 100
++        self.assertTrue(all(abs(v - 0.5) < 1e-9 for v in m.gains().values()))
++
++
++# ---------------------------------------------------------------------------------------------------------------- engine
++class TestEngine(Base):
++    def test_each_track_alone(self):
++        for k in FREQ:
++            e = self.engine([k])
++            lv = peak_levels(render_seconds(e, 1))
++            self.assertAlmostEqual(lv[k], 0.1, delta=0.005, msg=k)
++            self.assertTrue(all(v < 0.003 for kk, v in lv.items() if kk != k), (k, lv))
++
++    def test_all_six_together_no_duplicates(self):
++        e = self.engine()
++        lv = peak_levels(render_seconds(e, 1))
++        for k in FREQ:
++            self.assertAlmostEqual(lv[k], 0.1, delta=0.005, msg=k)                # each exactly once (a duplicate would show 0.2)
++        self.assertEqual(e.cursor, SR)                                           # one cursor, exactly 1 s consumed
++
++    def test_mute_solo_enable_in_engine(self):
++        e = self.engine()
++        e.mixer.channels["khmer_voice"].mute = True
++        lv = peak_levels(render_seconds(e, 1)); self.assertLess(lv["khmer_voice"], 0.003); self.assertGreater(lv["ai_voice"], 0.09)
++        e.mixer.channels["khmer_voice"].mute = False; e.mixer.channels["sfx"].solo = True
++        render_seconds(e, 0.1); lv = peak_levels(render_seconds(e, 1))           # 0.1 s: lets the gain ramp finish
++        self.assertGreater(lv["sfx"], 0.09); self.assertTrue(all(v < 0.003 for k, v in lv.items() if k != "sfx"))
++        e.mixer.channels["sfx"].solo = False; e.mixer.channels["bgm"].enabled = False
++        render_seconds(e, 0.1); lv = peak_levels(render_seconds(e, 1))
++        self.assertLess(lv["bgm"], 0.003); self.assertGreater(lv["sfx"], 0.09)
++
++    def test_volume_change_during_playback(self):
++        e = self.engine(["ai_voice"])
++        before = level(render_seconds(e, 1), 440)
++        e.mixer.channels["ai_voice"].volume = 50                                 # slider moved while playing
++        chunk = e.render(2205)                                                   # the very next chunk already contains the ramp
++        first = np.abs(np.frombuffer(chunk, dtype="<i2")).astype(float)
++        self.assertLess(first[-200:].max(), 0.6 * 0.1 * 32768 * 1.0)             # end of that chunk is already near 50 %
++        after = level(render_seconds(e, 1), 440)
++        self.assertAlmostEqual(after / before, 0.5, delta=0.02)
++        e.mixer.master = 50
++        render_seconds(e, 0.1)
++        self.assertAlmostEqual(level(render_seconds(e, 1), 440) / before, 0.25, delta=0.02)
++
++    def test_volume_200_clips_not_wraps(self):
++        loud = write_wav(os.path.join(self.tmp, "loud.wav"), tone(440, 2, amp=0.5))                 # 0.5 x 2 x 2 = 2.0 -> must saturate
++        e = EN.MixEngine(M.Mixer()); e.set_sources({"ai_voice": EN.TrackSource(loud)}, 2.0, "t")
++        e.mixer.channels["ai_voice"].volume = 200; e.mixer.master = 200
++        a = np.frombuffer(render_seconds(e, 1), dtype="<i2")
++        self.assertLessEqual(int(a.max()), 32767); self.assertGreater(int(a.max()), 30000)   # saturates, never wraps to negative
++
++    def test_pause_resume_continuous(self):
++        e1, e2 = self.engine(["sfx", "bgm"]), self.engine(["sfx", "bgm"])
++        straight = render_seconds(e1, 2)
++        part1 = render_seconds(e2, 0.7)
++        t = e2.time                                                              # --- pause: nothing is rendered, the cursor stays
++        self.assertAlmostEqual(t, 0.7, places=3)
++        part2 = render_seconds(e2, 1.3)                                          # --- resume
++        self.assertEqual(part1 + part2, straight)                                # no gap, no repeated samples
++
++    def test_seek_matches_source(self):
++        e = self.engine(["sfx"])
++        e.seek(5.0)
++        got = np.frombuffer(e.render(SR // 2), dtype="<i2").reshape(-1, 2)
++        src = EN.TrackSource(self.wav["sfx"]).data[5 * SR:5 * SR + SR // 2]
++        self.assertLessEqual(int(np.abs(got.astype(int) - src.astype(int)).max()), 1)    # same samples as the file at 5.0 s
++        e.seek(1.0); self.assertAlmostEqual(e.time, 1.0, places=4)               # seek backwards works too
++        e.seek(100.0); self.assertEqual(e.render(100).__len__(), 400)            # past the end: silence, no crash
++        self.assertTrue(e.at_end())
++
++    def test_listen_only_one_track(self):
++        e = self.engine(); e.mixer.channels["sfx"].mute = True; e.listen_only = "sfx"
++        render_seconds(e, 0.1); lv = peak_levels(render_seconds(e, 1))
++        self.assertGreater(lv["sfx"], 0.09); self.assertTrue(all(v < 0.003 for k, v in lv.items() if k != "sfx"))
++        e.listen_only = None
++
++
++# ---------------------------------------------------------------------------------------------------------------- whole pipeline
++@unittest.skipUnless(shutil.which("ffmpeg"), "ffmpeg not installed")
++class TestSixTrackPipeline(Base):
++    """Real ffmpeg: render the six tracks exactly like the Play button does, then mix them with the engine."""
++
++    @classmethod
++    def setUpClass(cls):
++        super().setUpClass()
++        cls.video = os.path.join(cls.tmp, "step2_test_video.mp4")
++        subprocess.run(["ffmpeg", "-y", "-v", "error", "-f", "lavfi", "-i", "color=c=black:s=64x64:d=12:r=10", "-f", "lavfi", "-i",
++                        f"sine=frequency={FREQ['orig_vocals']}:sample_rate=48000:duration=12", "-ac", "1", "-shortest",
++                        "-c:v", "libx264", "-c:a", "aac", cls.video], check=True)
++        d = AU.stem_dir(cls.video); d.mkdir(parents=True, exist_ok=True)         # fake Demucs stems: vocals=220 Hz, background=550 Hz
++        write_wav(d / "vocals.wav", tone(FREQ["orig_vocals"], 12)); write_wav(d / "no_vocals.wav", tone(FREQ["orig_bg"], 12))
++        cls.stems = d
++        cls.cue_wav = write_wav(os.path.join(cls.tmp, "kh.wav"), tone(FREQ["khmer_voice"], 2, amp=0.2, sr=24000, ch=1), sr=24000)
++
++    @classmethod
++    def tearDownClass(cls):
++        shutil.rmtree(work_dir("step2_test_video"), ignore_errors=True)
++        super().tearDownClass()
++
++    def project(self):
++        cues = [Cue(start=2.0, end=4.0, translation="x", audio=self.cue_wav), Cue(start=7.0, end=9.0, translation="y", audio=self.cue_wav)]
++        mk = lambda tr, f, start: AU.AudioClip(track=tr, path=self.wav[f], name=f, start=start, dur=4.0, src_len=12.0)
++        clips = [mk("ai_voice", "ai_voice", 3.0), mk("bgm", "bgm", 0.0), mk("sfx", "sfx", 5.0)]
++        return cues, clips
++
++    def prep(self, mixer, tag):
++        cues, clips = self.project()
++        out = EN.prepare_sources(self.video, cues, clips, mixer, 12.0, os.path.join(self.tmp, "pb_" + tag))
++        return {k: EN.TrackSource(p) for k, p in out.items()}
++
++    def test_six_tracks_end_to_end(self):
++        m = M.Mixer(); m.channels["orig_vocals"].volume = 100
++        srcs = self.prep(m, "all")
++        self.assertEqual(set(srcs), set(FREQ))                                   # six separate tracks, Khmer Voice and AI Voice not merged
++        self.assertNotEqual(srcs["khmer_voice"].path, srcs["ai_voice"].path)
++        e = EN.MixEngine(m); e.set_sources(srcs, 12.0, "x")
++        # at 3.0-4.0 s everything overlaps: orig(0-12) + khmer(2-4) + ai(3-7) + bg(0-12) + bgm(0-4) ; sfx starts at 5 s
++        e.seek(3.0); lv = peak_levels(render_seconds(e, 1))
++        for k in ("orig_vocals", "khmer_voice", "ai_voice", "orig_bg", "bgm"):
++            self.assertGreater(lv[k], 0.05, (k, lv))
++        self.assertLess(lv["sfx"], 0.003)                                        # sfx clip has not started: no accidental playback
++        e.seek(5.0); lv = peak_levels(render_seconds(e, 1))
++        self.assertGreater(lv["sfx"], 0.05); self.assertGreater(lv["ai_voice"], 0.05)
++        self.assertLess(lv["khmer_voice"], 0.003); self.assertLess(lv["bgm"], 0.003)       # their clips ended
++        e.seek(10.0); lv = peak_levels(render_seconds(e, 1))
++        self.assertLess(lv["sfx"], 0.003); self.assertLess(lv["ai_voice"], 0.003)
++
++    def test_clip_timing_sample_accurate(self):
++        m = M.Mixer(); srcs = self.prep(m, "timing")
++        a = np.abs(srcs["ai_voice"].data[:, 0].astype(int))                      # AI Voice clip was placed at 3.000 s
++        onset = int(np.argmax(a > 500)) / SR
++        self.assertAlmostEqual(onset, 3.0, delta=0.012)
++        k = np.abs(srcs["khmer_voice"].data[:, 0].astype(int)); self.assertAlmostEqual(int(np.argmax(k > 500)) / SR, 2.0, delta=0.05)
++        s = np.abs(srcs["sfx"].data[:, 0].astype(int)); self.assertAlmostEqual(int(np.argmax(s > 500)) / SR, 5.0, delta=0.012)
++
++    def test_disabled_track_not_rendered_nor_played(self):
++        m = M.Mixer(); m.channels["sfx"].enabled = False; m.channels["ai_voice"].enabled = False
++        srcs = self.prep(m, "dis")
++        self.assertNotIn("sfx", srcs); self.assertNotIn("ai_voice", srcs)
++        e = EN.MixEngine(m); e.set_sources(srcs, 12.0, "x"); e.seek(5.0)
++        lv = peak_levels(render_seconds(e, 1)); self.assertLess(lv["sfx"], 0.003); self.assertLess(lv["ai_voice"], 0.003)
++
++    def test_original_audio_fallback_without_demucs(self):
++        for f in self.stems.glob("*.wav"):
++            f.rename(f.with_suffix(".bak"))
++        try:
++            m = M.Mixer(); m.channels["orig_vocals"].volume = 100
++            srcs = self.prep(m, "nodemucs")
++            self.assertIn("orig_vocals", srcs); self.assertNotIn("orig_bg", srcs)
++            e = EN.MixEngine(m); e.set_sources(srcs, 12.0, "x"); e.seek(8.0)
++            self.assertAlmostEqual(level(render_seconds(e, 1), 220), 0.1, delta=0.03)      # the video's own audio (aac) is there
++            m0 = M.Mixer()                                                                  # nothing else + Original at 0 % -> engine idle
++            out = EN.prepare_sources(self.video, [], [], m0, 12.0, os.path.join(self.tmp, "pb_idle"))
++            self.assertEqual(out, {})
++        finally:
++            for f in self.stems.glob("*.bak"):
++                f.rename(f.with_suffix(".wav"))
++
++    def test_signature(self):
++        cues, clips = self.project(); m = M.Mixer()
++        s0 = EN.build_signature(self.video, cues, clips, m, 12.0)
++        m.channels["sfx"].volume = 20; m.channels["sfx"].mute = True; m.master = 30; m.channels["bgm"].solo = True
++        self.assertEqual(EN.build_signature(self.video, cues, clips, m, 12.0), s0)         # live settings do not re-render
++        clips[0].start += 0.5
++        self.assertNotEqual(EN.build_signature(self.video, cues, clips, m, 12.0), s0)      # editing a clip does
++        clips[0].start -= 0.5; m.channels["bgm"].enabled = False
++        self.assertNotEqual(EN.build_signature(self.video, cues, clips, m, 12.0), s0)      # enable/disable does
++
++    def test_export_path_accepts_ai_voice(self):
++        cues, clips = self.project()
++        ins = AU.gather_inputs(self.video, None, [], [], 12.0, tmp_dir=os.path.join(self.tmp, "ex"), ai_clips=[clips[0]])
++        self.assertIn("ai_voice", ins)
++        m = M.Mixer(); out = AU.render_mix(ins, m, os.path.join(self.tmp, "ex", "mix.wav"))
++        with wave.open(out) as w:
++            self.assertEqual((w.getframerate(), w.getnchannels()), (44100, 2))
++
++
++if __name__ == "__main__":
++    unittest.main()
+diff -ruN '--exclude=__pycache__' '--exclude=STEP1_changes.diff' '--exclude=STEP1_NOTES.md' orig/tests/test_step2_controller.py p/tests/test_step2_controller.py
+--- orig/tests/test_step2_controller.py	1970-01-01 00:00:00.000000000 +0000
++++ p/tests/test_step2_controller.py	2026-11-23 08:26:03.153971401 +0000
+@@ -0,0 +1,185 @@
++"""STEP 2 - controller LOGIC test with a stubbed PySide6 (no Qt, no sound card).  It runs the real PlaybackMixin code from
++app/ui/playback.py against fake player / fake audio output and checks Play / Pause / Stop / Seek / Resume / drift / re-render rules.
++It does NOT test real QMediaPlayer / QAudioSink behaviour.   Run from the project root:  python tests/test_step2_controller.py -v"""
++import os, shutil, subprocess, sys, tempfile, types, unittest, wave
++from types import SimpleNamespace
++import numpy as np
++
++ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
++sys.path.insert(0, ROOT)
++
++
++# ---------------------------------------------------------------- minimal PySide6 stub
++class _Sig:
++    def __init__(self): self.s = []
++    def connect(self, f): self.s.append(f)
++    def emit(self, *a):
++        for f in list(self.s): f(*a)
++
++class Signal:
++    def __init__(self, *a): pass
++    def __set_name__(self, o, n): self.n = "_sig_" + n
++    def __get__(self, obj, t=None):
++        if obj is None: return self
++        if not hasattr(obj, self.n): setattr(obj, self.n, _Sig())
++        return getattr(obj, self.n)
++
++class QObject:
++    def __init__(self, *a, **k): pass
++
++class QTimer(QObject):
++    timeout = Signal()
++    def __init__(self, *a): self.on = False
++    def setInterval(self, ms): pass
++    def start(self): self.on = True
++    def stop(self): self.on = False
++
++class QThread(QObject):
++    def isRunning(self): return False
++    def start(self): self.run()                       # synchronous: results arrive immediately
++
++for name, attrs in {"PySide6": {}, "PySide6.QtCore": dict(QObject=QObject, QTimer=QTimer, QThread=QThread, Signal=Signal, QRunnable=object),
++                    "PySide6.QtWidgets": dict(QMessageBox=SimpleNamespace(information=lambda *a, **k: None))}.items():
++    m = types.ModuleType(name); m.__dict__.update(attrs); sys.modules[name] = m
++sys.modules["PySide6"].QtCore = sys.modules["PySide6.QtCore"]; sys.modules["PySide6"].QtWidgets = sys.modules["PySide6.QtWidgets"]
++
++from app.ui import playback as PB          # noqa: E402  (real file, stubbed Qt)
++from app.studio import model as M, audio as AU, engine as EN   # noqa: E402
++from app.shared.paths import work_dir      # noqa: E402
++
++SR = 44100
++def wavf(p, f, secs, amp=0.1):
++    t = np.arange(int(secs * SR)) / SR
++    x = np.repeat((np.sin(2 * np.pi * f * t) * amp * 32767).astype("<i2")[:, None], 2, axis=1)
++    with wave.open(p, "wb") as w: w.setnchannels(2); w.setsampwidth(2); w.setframerate(SR); w.writeframes(x.tobytes())
++    return p
++
++
++class FakePlayer:
++    StoppedState, PlayingState, PausedState = 0, 1, 2
++    def __init__(self): self.state, self.ms = 0, 0; self.playbackStateChanged = _Sig(); self.calls = []
++    def playbackState(self): return self.state
++    def position(self): return self.ms
++    def setPosition(self, ms): self.ms = ms; self.calls.append(("seek", ms))
++    def _set(self, s): self.state = s; self.playbackStateChanged.emit(s)
++    def play(self): self.calls.append("play"); self._set(1)
++    def pause(self): self.calls.append("pause"); self._set(2)
++
++
++class FakeOut:
++    available = True
++    def __init__(self, engine): self.engine, self.running, self.starts, self.stops, self.audible = engine, False, [], 0, None
++    def start(self, t): self.running = True; self.starts.append(t); self.engine.seek(t)
++    def stop(self): self.running = False; self.stops += 1
++    def audible_time(self): return self.engine.time if self.audible is None else self.audible
++
++
++class Page(PB.PlaybackMixin):
++    def __init__(self, video, clips):
++        self.mixer = M.Mixer(); self.cues = []; self.clips = clips; self.video = video; self.vid_dur = 12.0
++        self.voice_off = SimpleNamespace(value=lambda: 0.0); self.btn_play = SimpleNamespace(setEnabled=lambda v: None)
++        self.log = SimpleNamespace(msgs=[], appendPlainText=lambda m: self.log.msgs.append(m))
++        self.vplayer = FakePlayer(); self._QMP = FakePlayer
++        self.vaudio = SimpleNamespace(muted=None, setMuted=lambda v: setattr(self.vaudio, "muted", v))
++        self._pb_init(); self._pb_out = FakeOut(self.engine); self._pb_wire(); self.prepares = 0
++        orig = self._pb_prepare
++        def counted(then_play=False): self.prepares += 1; orig(then_play)
++        self._pb_prepare = counted
++    def _playing(self): return self.vplayer.state == FakePlayer.PlayingState
++
++
++class TestController(unittest.TestCase):
++    @classmethod
++    def setUpClass(cls):
++        cls.tmp = tempfile.mkdtemp(prefix="ms_ctl_")
++        cls.video = os.path.join(cls.tmp, "step2_ctl_video.mp4")
++        subprocess.run(["ffmpeg", "-y", "-v", "error", "-f", "lavfi", "-i", "color=c=black:s=64x64:d=12:r=10", "-f", "lavfi", "-i",
++                        "sine=frequency=220:duration=12", "-shortest", "-c:v", "libx264", "-c:a", "aac", cls.video], check=True)
++        cls.sfx = wavf(os.path.join(cls.tmp, "sfx.wav"), 880, 5)
++
++    @classmethod
++    def tearDownClass(cls):
++        shutil.rmtree(cls.tmp, ignore_errors=True); shutil.rmtree(work_dir("step2_ctl_video"), ignore_errors=True)
++
++    def page(self, with_clip=True):
++        clips = [AU.AudioClip(track="sfx", path=self.sfx, name="sfx", start=1.0, dur=4.0, src_len=5.0)] if with_clip else []
++        return Page(self.video, clips)
++
++    def test_play_prepares_then_plays_everything_together(self):
++        p = self.page()
++        p._pb_play_pressed()
++        self.assertEqual(p.prepares, 1)
++        self.assertEqual(p.vplayer.calls, ["play"])                    # video started once, AFTER the audio was ready
++        self.assertTrue(p._pb_out.running); self.assertEqual(len(p._pb_out.starts), 1)   # audio started by the same Play (no 2nd player)
++        self.assertTrue(p.vaudio.muted)                                # the video's own audio is muted: no double audio
++        self.assertIn("sfx", p.engine.sources); self.assertIn("orig_vocals", p.engine.sources)
++
++    def test_pause_resume_stop(self):
++        p = self.page(); p._pb_play_pressed(); p.vplayer.ms = 3000
++        p.vplayer.pause()
++        self.assertFalse(p._pb_out.running)                            # pause stops audio
++        p.vplayer.ms = 3000; p._pb_play_pressed()                      # resume: no re-render, audio restarts at the video position
++        self.assertEqual(p.prepares, 1); self.assertEqual(p._pb_out.starts[-1], 3.0); self.assertTrue(p._pb_out.running)
++        p._pb_stop()
++        self.assertFalse(p._pb_out.running); self.assertEqual(p.vplayer.position(), 0)
++        p.vplayer.state = FakePlayer.StoppedState; p.vplayer.playbackStateChanged.emit(0)   # end of media
++        self.assertFalse(p._pb_out.running)
++
++    def test_seek_moves_audio_with_video(self):
++        p = self.page(); p._pb_play_pressed()
++        p._pb_set_pos(7.5)
++        self.assertEqual(p.vplayer.position(), 7500); self.assertEqual(p._pb_out.starts[-1], 7.5)
++        self.assertAlmostEqual(p.engine.time, 7.5, places=3)
++
++    def test_seek_while_paused_audio_follows_on_play(self):
++        p = self.page(); p._pb_play_pressed(); p.vplayer.pause()
++        n = len(p._pb_out.starts); p._pb_set_pos(9.0)
++        self.assertEqual(len(p._pb_out.starts), n)                     # paused: nothing plays
++        p._pb_play_pressed(); self.assertEqual(p._pb_out.starts[-1], 9.0)
++
++    def test_drift_resync_rules(self):
++        p = self.page(); t = [100.0]; PB.time = SimpleNamespace(monotonic=lambda: t[0])
++        p._pb_play_pressed(); p.vplayer.ms = 4000; n = len(p._pb_out.starts)
++        p._pb_out.audible = 4.05; t[0] += 5; p._pb_sync()
++        self.assertEqual(len(p._pb_out.starts), n)                     # 50 ms off: tolerated
++        p._pb_out.audible = 4.30; p._pb_sync()
++        self.assertEqual(len(p._pb_out.starts), n + 1); self.assertEqual(p._pb_out.starts[-1], 4.0)   # 300 ms off: re-sync to the video
++        p._pb_out.audible = 9.0; p._pb_sync()
++        self.assertEqual(len(p._pb_out.starts), n + 1)                 # not again within RESYNC_GAP
++        import time; PB.time = time
++
++    def test_second_play_does_not_rerender_and_changes_do(self):
++        p = self.page(); p._pb_play_pressed(); p.vplayer.pause(); p._pb_play_pressed()
++        self.assertEqual(p.prepares, 1)
++        p.mixer.channels["sfx"].volume = 10; p.mixer.channels["sfx"].mute = True; p._pb_mixer_changed()
++        self.assertEqual(p.prepares, 1)                                # volume / mute: live, no re-render
++        p.vplayer.pause(); p.clips[0].start = 2.0; p._pb_play_pressed()
++        self.assertEqual(p.prepares, 2)                                # edited clip: re-rendered before playing
++
++    def test_enable_toggle_rerenders_while_playing(self):
++        p = self.page(); p.mixer.channels["sfx"].enabled = False; p._pb_play_pressed()
++        self.assertNotIn("sfx", p.engine.sources)
++        p.mixer.channels["sfx"].enabled = True; p.vplayer.ms = 2000; p._pb_mixer_changed()
++        self.assertIn("sfx", p.engine.sources); self.assertEqual(p._pb_out.starts[-1], 2.0)   # new source mixed in, playback continued
++
++    def test_nothing_to_mix_keeps_video_audio(self):
++        p = self.page(with_clip=False); p._pb_play_pressed()
++        self.assertEqual(p.vplayer.calls, ["play"]); self.assertFalse(p.engine.has_audio())
++        self.assertFalse(p._pb_out.running); self.assertFalse(p.vaudio.muted)     # like before STEP 2: video plays its own sound
++
++    def test_listen_only_uses_main_playback(self):
++        p = self.page(); p._pb_listen("sfx")
++        self.assertEqual(p.engine.listen_only, "sfx"); self.assertTrue(p._pb_out.running)
++        self.assertEqual(p.vplayer.calls, ["play"])                    # the video plays too - nothing is paused for a preview
++        p2 = self.page(); p2._pb_listen("ai_voice")                    # a track without audio
++        self.assertIsNone(p2.engine.listen_only); self.assertTrue(any("no audio" in m for m in p2.log.msgs))
++
++    def test_failed_render_falls_back_to_video_audio(self):
++        p = self.page(); p.video = os.path.join(self.tmp, "missing.mp4")
++        p.clips[0].path = os.path.join(self.tmp, "nope.wav")
++        p._pb_play_pressed()
++        self.assertIn("play", p.vplayer.calls)                         # never stuck: the video still plays
++
++
++if __name__ == "__main__":
++    unittest.main()
