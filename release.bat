@@ -3,7 +3,7 @@ REM Publish a code update.   release.bat 1.1.0 "what changed"
 REM Publishes to the PUBLIC releases repo set below (your source repo can stay private).
 REM Needs the GitHub CLI once:  winget install GitHub.cli   then   gh auth login
 cd /d "%~dp0"
-set RELEASES_REPO=YOUR_GITHUB_USER/MediaStudio-releases
+set RELEASES_REPO=zingi123/MediaStudio-releases
 if "%~1"=="" (echo Usage: release.bat 1.1.0 "what changed" & exit /b 1)
 if exist .venv311\Scripts\activate.bat call .venv311\Scripts\activate.bat
 python tools\release.py %1 %2

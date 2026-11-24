@@ -56,6 +56,9 @@ class MainWindow(QMainWindow):
         self.hint = QLabel("AI VIDEO TRANSLATION  ·  KHMER DUBBING")
         self.hint.setObjectName("headerHint")
         h.addWidget(self.hint)
+        self.upd_btn = QPushButton("⟳  Update")
+        self.upd_btn.setToolTip("Check for a new version")
+        h.addWidget(self.upd_btn)
         outer.addWidget(header)
 
         # Left workflow rail + the existing functional Translator page.
@@ -95,6 +98,13 @@ class MainWindow(QMainWindow):
         self.show_workspace(0)
 
         self.setCentralWidget(root)
+
+        try:                                    # update alert must never block the app
+            from .update_dialog import UpdateController
+            self._upd = UpdateController(self)
+            self.upd_btn.clicked.connect(lambda: self._upd.check(silent=False))
+        except Exception:
+            self.upd_btn.hide()
 
     def show_workspace(self, index):
         self.stack.setCurrentIndex(index)
