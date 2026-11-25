@@ -27,7 +27,7 @@ def main():
     out.mkdir(exist_ok=True)
     zp = out / "update.zip"
     # min_launcher: raise this number ONLY when the new code needs a library that the installed exe does not contain.
-    meta = {"version": ver, "min_launcher": 1}
+    meta = {"version": ver, "min_launcher": 0}
     with zipfile.ZipFile(zp, "w", zipfile.ZIP_DEFLATED) as z:
         for f in sorted((ROOT / "app").rglob("*")):
             if f.is_file() and "__pycache__" not in f.parts and f.suffix != ".pyc":
