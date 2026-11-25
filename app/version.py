@@ -1,4 +1,4 @@
-__version__ = "1.0.7"
+__version__ = "1.0.8"
 GITHUB_REPO = "zingi123/media-studio-releases"
 
 # Launcher compatibility: an update whose release.json says "min_launcher": N only installs on a MediaStudio.exe
