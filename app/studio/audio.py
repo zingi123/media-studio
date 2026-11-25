@@ -45,7 +45,12 @@ def have_stems(video):
 def run_demucs(video, device="cpu", progress=None, cancel=None):
     """The Demucs BUTTON.  Separates once (cached); returns {"vocals": path, "no_vocals": path}."""
     from ..translator.separation import separate
-    separate(video, device, progress=progress, cancel=cancel)
+    try:
+        from ..shared.settings import Settings
+        py = Settings().get("demucs_python") or ""
+    except Exception:  # noqa
+        py = ""
+    separate(video, device, progress=progress, cancel=cancel, python=py)
     p = stem_paths(video)
     if not (p["vocals"].exists() and p["no_vocals"].exists()):
         raise RuntimeError("Demucs finished but the stems were not found.")

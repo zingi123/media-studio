@@ -88,6 +88,15 @@ class AutoDubMixin:
         if getattr(self, "_batch", None) is not None:
             self._batch_video_failed(msg)
 
+    def _ad_demucs_failed(self, msg, next_step):
+        """Demucs is OPTIONAL: when it fails, say so, switch it off for this run and go on without it (no Background Audio)."""
+        self._st_refresh_mixer_state()
+        if getattr(self, "_auto", None) is None:
+            return
+        self._auto["demucs"] = False
+        self.log.appendPlainText("   (Demucs skipped - continuing without it. The original music / effects will not be kept as Background Audio.)")
+        self._ad_then(next_step)()
+
     def _ad_step(self, name):
         if getattr(self, "_auto", None) is None:
             return
@@ -107,7 +116,7 @@ class AutoDubMixin:
                 self._demucs_done(res)
                 self._ad_then("scan")()
             return self._run(AU.run_demucs, self.video, self.device.currentText(), done=done,
-                             on_fail=lambda m: (self._st_refresh_mixer_state(), self._ad_abort(m)))
+                             on_fail=lambda m: self._ad_demucs_failed(m, "scan"))
         if self.cues:
             self.log.appendPlainText(f"① Script exists ({len(self.cues)} lines) - scan skipped.")
             return self._ad_step("translate")
@@ -198,7 +207,7 @@ class AutoDubMixin:
             self._demucs_done(res)
             self._ad_then("clone")()
         self._run(AU.run_demucs, self.video, self.device.currentText(), done=done,
-                  on_fail=lambda m: (self._st_refresh_mixer_state(), self._ad_abort(m)))
+                  on_fail=lambda m: self._ad_demucs_failed(m, "clone"))
 
     def _ad_clone(self):
         """OPTIONAL (setting `autodub_auto_clone`, default off): clone each character's real voice from the cleanest lines of the original."""
